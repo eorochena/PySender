@@ -8,7 +8,7 @@ ip_address = os.popen('hostname -i').read()
 hostname = os.popen('hostname').read()
 Fail2Connect = 0
 filename = "/var/log/syslog"
-follow = subprocess.Popen(['tail','-F',filename],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 polling = select.poll()
 
 polling.register(follow.stdout)
