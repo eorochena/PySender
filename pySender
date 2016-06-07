@@ -32,5 +32,5 @@ while True:
 		break
 if Fail2Connect == 5:
 	print "Tried to restablish connection %s times every 0.1 secs, Closing Down" % Fail2Connect
-	os.popen("echo \"Application stopped, not sending messages to GrayLog\"|mail -s \"Not sending %s messages to GrayLog from %s\" some-email@someplace.something" % (filename.split('/')[3]), hostname)
+	os.popen("echo 'Application stopped, not sending messages to GrayLog'|mail -s 'Not sending %s messages to GrayLog from %s' some-email@someplace.something" % (filename.split('/')[3], hostname))
 	sys.exit(1)
