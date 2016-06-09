@@ -30,17 +30,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 logger.addHandler(GelfTcpHandler(host=graylog_server, port=graylog_port, _app_name='%s' % filename.split('/')[3], _ip_address=ip_address, _hostname=hostname, compress=False))
 
-port = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-port_availability = port.connect_ex((graylog_server, graylog_port))
 Fail2Connect = 0
 
+def port_available():
+        try:
+                port = socket.socket()
+                port.settimeout(0.1)
+                port_availability = port.connect((graylog_server, graylog_port))
+                port.close()
+        except:
+                return False
+        return True
+
 while True:
-	if port_availability == 0 and Fail2Connect < 5:
+	if port_available() == True and Fail2Connect < 5:
 		if polling.poll(0.1):
 			message = "%s - %s" % (filename.split('/')[3], follow.stdout.readline())
 			logging.info(message)
 		time.sleep(0.1)
-	elif port_availability != 0 and Fail2Connect < 5:
+	elif port_available() == False and Fail2Connect < 5:
 		Fail2Connect += 1
 	elif Fail2Connect == 5:
 		print "Unable to connect to GrayLog"
