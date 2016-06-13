@@ -3,6 +3,10 @@
 import time, logging, os, sys, subprocess, select, smtplib, socket
 from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler
 
+# Log directory for the application
+if os.path.isdir(EnvironmentDirectory) == False:
+	subprocess.call('mkdir /var/log/PySend', shell=True)
+
 # GrayLog parameters
 graylog_server = "Your GrayLog server ip address"
 graylog_port = "GrayLog port"
