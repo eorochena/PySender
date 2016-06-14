@@ -3,10 +3,6 @@
 import time, logging, os, sys, subprocess, select, smtplib, socket
 from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler
 
-# Log directory for the application
-if os.path.isdir(EnvironmentDirectory) == False:
-	subprocess.call('mkdir /var/log/PySend', shell=True)
-
 # GrayLog parameters
 graylog_server = "Your GrayLog server ip address"
 graylog_port = "GrayLog port"
@@ -34,8 +30,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 logger.addHandler(GelfTcpHandler(host=graylog_server, port=graylog_port, _app_name='%s' % filename.split('/')[3], _ip_address=ip_address, _hostname=hostname, compress=False))
 
-Fail2Connect = 0
+# Application log
+LogFile = "/var/log/PySender/%s.log" % sys.argv[0]
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+if os.path.isdir(LogFile) == False:
+        subprocess.call('mkdir /var/log/PySend', shell=True)
 
+# Check if tail -F is alive
+def tail_alive():
+        alive = os.popen("ps ax|grep 'tail -F %s'|grep -v grep|wc -l" % filename).read()[0]
+        if int(alive) == 1:
+                return True
+        elif int(alive) > 1 or int(alive) < 1:
+                log_file = open(LogFile, 'a')
+                log_file.write(hoy + ' - tail - Bad %s\n' % alive)
+                log_file.close()
+                return False
+
+# Check if port is listening
 def port_available():
         try:
                 port = socket.socket()
@@ -46,12 +58,19 @@ def port_available():
                 return False
         return True
 
+Fail2Connect = 0
+
 while True:
 	if port_available() == True and Fail2Connect < 5:
-		if polling.poll(0.1):
-			message = "%s - %s" % (filename.split('/')[3], follow.stdout.readline())
-			logging.info(message)
-		time.sleep(0.1)
+		try:
+			if polling.poll(0.1):
+				message = "%s - %s" % (filename.split('/')[3], follow.stdout.readline())
+				logging.info(message)
+			time.sleep(0.1)
+		except Exception,e:
+                        log_file = open(LogFile, 'a')
+                        log_file.write(hoy + ' - send failed - ' + str(e) + '\n')
+                        log_file.close()
 	elif port_available() == False and Fail2Connect < 5:
 		Fail2Connect += 1
 	elif Fail2Connect == 5:
