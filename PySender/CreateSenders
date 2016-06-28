@@ -1,0 +1,6 @@
+#!/usr/bin/python
+
+conf_file = open('../sender.conf', 'r')
+read_it = conf_file.readlines()
+for i in read_it:
+	print i
