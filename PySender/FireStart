@@ -1,0 +1,14 @@
+#!/usr/bin/python
+
+import subprocess, os
+
+senders = ['PySender_syslog', 'PySender_auth']
+
+emptiness = os.devnull
+empty_file = open(emptiness, 'w')
+
+for i in senders:
+	subprocess.Popen('./'+i, stdout=empty_file, stderr=empty_file)
+
+
+

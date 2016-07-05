@@ -1,0 +1,85 @@
+#!/usr/bin/python
+
+import time, logging, os, sys, subprocess, select, smtplib, socket, datetime, re
+from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler
+
+# GrayLog parameters
+graylog_server = '192.168.1.100'
+graylog_port = 12202
+
+# File to read
+filename = '/var/log/auth.log'
+
+# Server settings
+ip_address = os.popen('hostname -i').read()
+hostname = os.popen('hostname').read()
+
+# Email Settings
+#email_server = smtplib.SMTP('email-server', 25)
+#email_recipient = "email address"
+#email_message = "Subject: PySender for %s on %s stop\n\nPySender has stopped sending %s messages to GrayLog %s from %s" % (filename, graylog_server, filename, graylog_server, ip_address)
+
+
+# Reading file contents
+follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+polling = select.poll()
+polling.register(follow.stdout)
+
+# pygelf and logging parameters
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+logger.addHandler(GelfTcpHandler(host=graylog_server, port=graylog_port, _app_name='auth', _ip_address=ip_address, _hostname=hostname, compress=False))
+
+# Application log
+LogDir = "/var/log/PySender/"
+LogFile = "/var/log/PySender/auth.log"  
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+if os.path.isdir(LogDir) == False:
+        subprocess.call('mkdir /var/log/PySender', shell=True)
+
+# Check if tail -F is alive
+def tail_alive():
+        alive = os.popen("ps ax|grep 'tail -F %s'|grep -v grep|wc -l" % filename).read()[0]
+        if int(alive) == 1:
+                return True
+        elif int(alive) > 1 or int(alive) < 1:
+                log_file = open(LogFile, 'a')
+                log_file.write(hoy + ' - tail - Bad %s\n' % alive)
+                log_file.close()
+                return False
+
+# Dealing with multiline log messages
+def logmsg():
+        content = ''
+        while tail_alive() == True:
+                msg = follow.stdout.readline()
+                if re.search(r'(\d+:\d+:\d+)', msg):
+                        yield content
+                        content = msg
+                else:
+                        content += msg
+        yield content
+
+
+Fail2Connect = 0
+
+while True:
+	if tail_alive() == True:
+		try:
+			if polling.poll(0.1):
+				for line in logmsg():
+					message = '%s - %s' % ('auth', line)
+					logging.info(message)
+			time.sleep(0.1)
+		except Exception,e:
+                        log_file = open(LogFile, 'a')
+                        log_file.write(hoy + ' - send failed - ' + str(e) + '\n')
+                        log_file.close()
+	elif tail_alive() == False:
+		follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+		polling = select.poll()
+		polling.register(follow.stdout)
+		continue
+print "Tried to restablish connection %s times every 0.1 secs, Closing Down" % Fail2Connect
+email_server.sendmail("PySender@%s" % filename.split('/')[3], email_recipient, email_message)
+sys.exit(1)

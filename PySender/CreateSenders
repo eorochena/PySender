@@ -2,5 +2,142 @@
 
 conf_file = open('../sender.conf', 'r')
 read_it = conf_file.readlines()
+parameters = {}
+
 for i in read_it:
-	print i
+	if 'server' in i:
+		parameters['server'] = i.split('"')[1]
+	elif 'port' in i:
+		parameters['port'] = i.split('"')[1]
+for i in read_it:
+	if 'application' in i:
+		parameters['application'] = i.split('"')[1]
+		continue
+	elif 'log_file' in i:
+		parameters['log_file'] = i.split('"')[1]
+	else:
+		continue
+
+	sender = open('PySender_%s' % parameters['application'], 'w')
+	template = """#!/usr/bin/python
+
+import time, logging, os, sys, subprocess, select, smtplib, socket, datetime, re
+from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler
+
+# GrayLog parameters
+graylog_server = '%s'
+graylog_port = %s
+
+# File to read
+filename = '%s'
+
+# Server settings
+ip_address = os.popen('hostname -i').read()
+hostname = os.popen('hostname').read()
+
+# Email Settings
+#email_server = smtplib.SMTP('email-server', 25)
+#email_recipient = \"email address\"
+#email_message = \"Subject: PySender for %%s on %%s stop\\n\\nPySender has stopped sending %%s messages to GrayLog %%s from %%s\" %% (filename, graylog_server, filename, graylog_server, ip_address)
+
+
+# Reading file contents
+follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+polling = select.poll()
+polling.register(follow.stdout)
+
+# pygelf and logging parameters
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+logger.addHandler(GelfTcpHandler(host=graylog_server, port=graylog_port, _app_name='%s', _ip_address=ip_address, _hostname=hostname, compress=False))
+
+# Application log
+LogDir = \"/var/log/PySender/\"
+LogFile = \"/var/log/PySender/%s.log\"  
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir(LogDir) == False:
+        subprocess.call('mkdir /var/log/PySender', shell=True)
+
+# Check if tail -F is alive
+def tail_alive():
+        alive = os.popen(\"ps ax|grep 'tail -F %%s'|grep -v grep|wc -l\" %% filename).read()[0]
+        if int(alive) == 1:
+                return True
+        elif int(alive) > 1 or int(alive) < 1:
+                log_file = open(LogFile, 'a')
+                log_file.write(hoy + ' - tail - Bad %%s\\n' %% alive)
+                log_file.close()
+                return False
+
+# Dealing with multiline log messages
+def logmsg():
+        content = ''
+        while tail_alive() == True:
+                msg = follow.stdout.readline()
+                if re.search(r'(\d+:\d+:\d+)', msg):
+                        yield content
+                        content = msg
+                else:
+                        content += msg
+        yield content
+
+
+Fail2Connect = 0
+
+while True:
+	if tail_alive() == True:
+		try:
+			if polling.poll(0.1):
+				for line in logmsg():
+					message = '%%s - %%s' %% ('%s', line)
+					logging.info(message)
+			time.sleep(0.1)
+		except Exception,e:
+                        log_file = open(LogFile, 'a')
+                        log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
+                        log_file.close()
+	elif tail_alive() == False:
+		follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+		polling = select.poll()
+		polling.register(follow.stdout)
+		continue
+print \"Tried to restablish connection %%s times every 0.1 secs, Closing Down\" %% Fail2Connect
+email_server.sendmail(\"PySender@%%s\" %% filename.split('/')[3], email_recipient, email_message)
+sys.exit(1)""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['application'])
+	
+	sender.write(template)
+	sender.close()	
+
+connection_file = open('check_connection', 'w')	
+connection_template = """#!/usr/bin/python
+
+import socket, datetime, os
+
+graylog_server = '%s'
+port = %s
+
+# Application log
+LogDir = \"/var/log/PySender/\"
+LogFile = \"/var/log/PySender/check_connection.log\"  
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir(LogDir) == False:
+        subprocess.call('mkdir /var/log/PySender', shell=True)
+
+try:
+	check_it = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	check_it.connect((graylog_server, port))
+	check_it.send('connected to GrayLog')
+	packet = check_it.recv(1024)
+	check_it.close()
+	log_file = open(LogFile, 'a')
+	log_file.write(hoy + ' GrayLog connection lost!!!')
+	log_file.close()
+except Exception,e:
+	log_file = open(LogFile, 'a')
+	log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
+	log_file.close() """ % (parameters['server'], parameters['port'])
+connection_file.write(connection_template)
+connection_file.close()
+
+#start_file = open('FireStart', 'w')
+#start_template = """#!/usr/bin/python
