@@ -3,7 +3,7 @@
 conf_file = open('../sender.conf', 'r')
 read_it = conf_file.readlines()
 parameters = {}
-
+apps = []
 for i in read_it:
 	if 'server' in i:
 		parameters['server'] = i.split('"')[1]
@@ -12,6 +12,7 @@ for i in read_it:
 for i in read_it:
 	if 'application' in i:
 		parameters['application'] = i.split('"')[1]
+		apps.append(parameters['application'])
 		continue
 	elif 'log_file' in i:
 		parameters['log_file'] = i.split('"')[1]
@@ -82,28 +83,37 @@ def logmsg():
         yield content
 
 
-Fail2Connect = 0
-
 while True:
-	if tail_alive() == True:
-		try:
-			if polling.poll(0.1):
-				for line in logmsg():
-					message = '%%s - %%s' %% ('%s', line)
-					logging.info(message)
-			time.sleep(0.1)
-		except Exception,e:
-                        log_file = open(LogFile, 'a')
-                        log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
-                        log_file.close()
-	elif tail_alive() == False:
-		follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-		polling = select.poll()
-		polling.register(follow.stdout)
-		continue
-print \"Tried to restablish connection %%s times every 0.1 secs, Closing Down\" %% Fail2Connect
-email_server.sendmail(\"PySender@%%s\" %% filename.split('/')[3], email_recipient, email_message)
-sys.exit(1)""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['application'])
+	try:
+		if tail_alive() == True:
+			try:
+				if polling.poll(0.1):
+					for line in logmsg():
+						message = '%%s - %%s' %% ('%s', line)
+						logging.info(message)
+				time.sleep(0.1)
+			except Exception,e:
+                        	log_file = open(LogFile, 'a')
+                        	log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
+                        	log_file.close()
+		elif tail_alive() == False:
+			follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+			polling = select.poll()
+			polling.register(follow.stdout)
+			continue
+	except (KeyboardInterrupt, SystemExit):
+        	os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        	log_file = open(LogFile, 'a')
+        	log_file.write(hoy + \" - Closed by SystemExit\\n\")
+        	sys.exit(1)
+	except Exception,e:
+        	os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        	log_file = open(LogFile, 'a')
+        	log_file.write(hoy + ' - other - ' + str(e) + '\\n')
+        	log_file.close()
+        	sys.exit(1)
+
+""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['application'], parameters['log_file'], parameters['log_file'])
 	
 	sender.write(template)
 	sender.close()	
@@ -139,5 +149,109 @@ except Exception,e:
 connection_file.write(connection_template)
 connection_file.close()
 
-#start_file = open('FireStart', 'w')
-#start_template = """#!/usr/bin/python
+start_file = open('FireStart', 'w')
+start_template = """#!/usr/bin/python
+
+import subprocess, os, datetime, time, sys
+
+senders = %s
+emptiness = os.devnull
+empty_file = open(emptiness, 'w')
+subprocess.Popen('./check_connection')
+
+# Application log
+LogFile = \"/var/log/PySender/FireStart.log\"
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir("/var/log/PySender") == False:
+	subprocess.call('mkdir /var/log/PySender', shell=True)
+
+
+def connection_alive():
+	is_up = os.popen('ps ax|grep check_connection|grep -v grep|wc -l').read()[0]
+	if int(is_up) == 1:
+		return True
+	elif int(is_up) > 1 or int(is_up) < 1:
+		log_file = open(LogFile, 'a')
+		log_file.write(hoy + ' connection from starter - %%s\\n' %% is_up)
+		log_file.close()
+		return False
+	else:
+		return False
+
+def processes_alive():
+	process_up = os.popen('ps ax|grep PySender_|egrep -v \"grep\"|wc -l').read()[0]
+	if int(process_up) == int(%s):
+		log_file = open(LogFile, 'a')
+		log_file.write(hoy + ' - process good from starter - %%s\\n' %% process_up)
+		log_file.close()
+		return True
+	elif int(process_up) > int(%s) or int(process_up) < int(%s):
+		log_file = open(LogFile, 'a')
+		log_file.write(hoy + ' - process from starter - %%s\\n' %% process_up)
+		log_file.close()
+		return False
+time.sleep(1)
+if connection_alive() == True:
+	for i in senders:
+		subprocess.Popen('./PySender_'+i, stdout=empty_file, stderr=empty_file)
+elif connection_alive() == False:
+	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+	log_file = open(LogFile, 'a')
+	log_file.write(hoy + ' - Unable to establish initial connection with GrayLog\\n')
+	log_file.close()
+	sys.exit(1)
+	
+
+Fail2Connect = 0
+
+while Fail2Connect < 5:
+	if connection_alive() == True and processes_alive() == True and Fail2Connect < 5:
+		continue
+	elif connection_alive() == False and processes_alive() == True and Fail2Connect < 5:
+		Fail2Connect += 1
+		subprocess.Popen('./check_connection')
+		time.sleep(1)
+		if connection_alive() == True and processes_alive() == True and Fail2Connect <= 4:
+			Fail2Connect = 0
+		else:
+			Fail2Connect += 1
+	elif connection_alive() == True and processes_alive() == False and Fail2Connect < 5:
+		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+		for i in senders:
+			subprocess.Popen('./PySender_'+i, stdout=empty_file, stderr=empty_file)
+	elif connection_alive() == False and processes_alive() == False and Fail2Connect < 5:
+		subprocess.Popen('./check_connection')
+		time.sleep(1)
+		if connection_alive() == True:
+			Fail2Connect = 0
+		else:
+			Fail2Connect += 1
+	elif Fail2Connect == 5:
+        	log_file = open(LogFile, 'a')
+		log_file.write(\"%%s - Unable to connect to GrayLog\\n\" %% hoy)
+		log_file.close()
+                break
+
+try:
+        if Fail2Connect >= 5:
+		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+                print \"%%s - Tried to restablish connection %%s times - Closing Down :(\" %% (hoy, Fail2Connect)
+        	log_file = open(LogFile, 'a')
+        	log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
+        	sys.exit(1)
+except (KeyboardInterrupt, SystemExit):
+	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+        log_file = open(LogFile, 'a')
+        log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
+        sys.exit(1)
+except Exception,e:
+	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+        log_file = open(LogFile, 'a')
+        log_file.write(hoy + ' - other - ' + str(e) + '\\n')
+        log_file.close()
+        sys.exit(1)
+""" % (apps, len(apps), len(apps), len(apps))
+start_file.write(start_template)
+start_file.close()
+	
+		
