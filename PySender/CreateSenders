@@ -43,7 +43,7 @@ hostname = os.popen('hostname').read()
 
 
 # Reading file contents
-follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+follow = subprocess.Popen(['tail', '-F', filename, '|', 'grep', '-v', 'SYS'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 polling = select.poll()
 polling.register(follow.stdout)
 
@@ -234,18 +234,21 @@ while Fail2Connect < 5:
 
 try:
         if Fail2Connect >= 5:
-		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
+		os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
                 print \"%%s - Tried to restablish connection %%s times - Closing Down :(\" %% (hoy, Fail2Connect)
         	log_file = open(LogFile, 'a')
         	log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
         	sys.exit(1)
 except (KeyboardInterrupt, SystemExit):
-	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
+	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
         log_file = open(LogFile, 'a')
         log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
         sys.exit(1)
 except Exception,e:
-	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
+	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
         log_file = open(LogFile, 'a')
         log_file.write(hoy + ' - other - ' + str(e) + '\\n')
         log_file.close()

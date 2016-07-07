@@ -21,7 +21,7 @@ hostname = os.popen('hostname').read()
 
 
 # Reading file contents
-follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+follow = subprocess.Popen(['tail', '-F', filename, '|', 'grep', '-v', 'SYS'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 polling = select.poll()
 polling.register(follow.stdout)
 
