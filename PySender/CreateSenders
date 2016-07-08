@@ -10,6 +10,11 @@ for i in read_it:
 	elif 'port' in i:
 		parameters['port'] = i.split('"')[1]
 for i in read_it:
+	if 'relayhost' in i:
+		parameters['relayhost'] = i.split('"')[1]
+	elif 'email_recipient' in i:
+		parameters['email_recipient'] = i.split('"')[1]
+for i in read_it:
 	if 'application' in i:
 		parameters['application'] = i.split('"')[1]
 		apps.append(parameters['application'])
@@ -22,7 +27,7 @@ for i in read_it:
 	sender = open('PySender_%s' % parameters['application'], 'w')
 	template = """#!/usr/bin/python
 
-import time, logging, os, sys, subprocess, select, smtplib, socket, datetime, re
+import time, logging, os, sys, subprocess, select, datetime, re, socket
 from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler
 
 # GrayLog parameters
@@ -33,14 +38,8 @@ graylog_port = %s
 filename = '%s'
 
 # Server settings
-ip_address = os.popen('hostname -i').read()
-hostname = os.popen('hostname').read()
-
-# Email Settings
-#email_server = smtplib.SMTP('email-server', 25)
-#email_recipient = \"email address\"
-#email_message = \"Subject: PySender for %%s on %%s stop\\n\\nPySender has stopped sending %%s messages to GrayLog %%s from %%s\" %% (filename, graylog_server, filename, graylog_server, ip_address)
-
+ip_address = socket.gethostbyname(socket.gethostname())
+hostname = socket.gethostname()
 
 # Reading file contents
 follow = subprocess.Popen(['tail', '-F', filename, '|', 'grep', '-v', 'SYS'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
@@ -152,12 +151,19 @@ connection_file.close()
 start_file = open('FireStart', 'w')
 start_template = """#!/usr/bin/python
 
-import subprocess, os, datetime, time, sys
+import subprocess, os, datetime, time, sys, smtplib, socket
 
 senders = %s
 emptiness = os.devnull
 empty_file = open(emptiness, 'w')
 subprocess.Popen('./check_connection')
+ip_address = socket.gethostbyname(socket.gethostname())
+hostname = socket.gethostname()
+
+# Email Settings
+email_server = smtplib.SMTP('%s', 25)
+email_recipient = '%s'
+email_message = \"Subject: PySender stop sending messages from %%s\\n\\nPySender has stopped sending messages to GrayLog from %%s(%%s)\" %% (hostname, hostname, ip_address) 
 
 # Application log
 LogFile = \"/var/log/PySender/FireStart.log\"
@@ -239,12 +245,14 @@ try:
                 print \"%%s - Tried to restablish connection %%s times - Closing Down :(\" %% (hoy, Fail2Connect)
         	log_file = open(LogFile, 'a')
         	log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
+		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 except (KeyboardInterrupt, SystemExit):
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
         log_file = open(LogFile, 'a')
         log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
+	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
 except Exception,e:
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
@@ -252,6 +260,7 @@ except Exception,e:
         log_file = open(LogFile, 'a')
         log_file.write(hoy + ' - other - ' + str(e) + '\\n')
         log_file.close()
+	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
 """ % (apps, len(apps), len(apps), len(apps))
 start_file.write(start_template)
