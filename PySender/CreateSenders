@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os, stat
+
 conf_file = open('../sender.conf', 'r')
 read_it = conf_file.readlines()
 parameters = {}
@@ -27,7 +29,7 @@ for i in read_it:
 	sender = open('PySender_%s' % parameters['application'], 'w')
 	template = """#!/usr/bin/python
 
-import time, logging, os, sys, subprocess, select, datetime, re, socket
+import time, logging, os, sys, subprocess, select, datetime, re, socket, smtplib
 from pygelf import GelfTcpHandler, GelfUdpHandler, GelfTlsHandler
 
 # GrayLog parameters
@@ -58,6 +60,12 @@ hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%
 if os.path.isdir(LogDir) == False:
         subprocess.call('mkdir /var/log/PySender', shell=True)
 
+
+# Email Settings
+email_server = smtplib.SMTP('%s', 25)
+email_recipient = '%s'
+email_message = \"Subject: PySender stop sending messages from %%s\\n\\nPySender has stopped sending messages to GrayLog from %%s(%%s) because FireStart is not running\" %% (hostname, hostname, ip_address) 
+
 # Check if tail -F is alive
 def tail_alive():
         alive = os.popen(\"ps ax|grep 'tail -F %%s'|grep -v grep|wc -l\" %% filename).read()[0]
@@ -69,10 +77,21 @@ def tail_alive():
                 log_file.close()
                 return False
 
+# Check if FireStart is alive and well
+def firestart():
+	fire_alive = os.popen(\"ps ax|grep FireStart|grep -v grep|wc -l\").read()[0]
+	if int(fire_alive) == 1:
+		return True
+	elif int(fire_alive) > 1 or int(fire_alive) < 1:
+		log_file = open(LogFile, 'a')
+		log_file.write(hoy + ' - FireStart is dead - %%s' %% fire_alive)
+		log_file.close()
+		return False
+
 # Dealing with multiline log messages
 def logmsg():
         content = ''
-        while tail_alive() == True:
+        while tail_alive() == True and firestart() == True:
                 msg = follow.stdout.readline()
                 if re.search(r'(\d+:\d+:\d+)', msg):
                         yield content
@@ -82,40 +101,51 @@ def logmsg():
         yield content
 
 
-while True:
-	try:
-		if tail_alive() == True:
-			try:
-				if polling.poll(0.1):
-					for line in logmsg():
-						message = '%%s - %%s' %% ('%s', line)
-						logging.info(message)
-				time.sleep(0.1)
-			except Exception,e:
-                        	log_file = open(LogFile, 'a')
-                        	log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
-                        	log_file.close()
-		elif tail_alive() == False:
-			follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-			polling = select.poll()
-			polling.register(follow.stdout)
-			continue
-	except (KeyboardInterrupt, SystemExit):
+while firestart() == True:
+	if tail_alive() == True:
+		try:
+			if polling.poll(0.1):
+				for line in logmsg():
+					message = '%%s - %%s' %% ('%s', line)
+					logging.info(message)
+			time.sleep(0.1)
+		except Exception,e:
+                        log_file = open(LogFile, 'a')
+                        log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
+                        log_file.close()
+		continue
+	elif tail_alive() == False:
+		follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+		polling = select.poll()
+		polling.register(follow.stdout)
+		continue
+try:
+	if firestart() == False:
         	os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\")
         	log_file = open(LogFile, 'a')
-        	log_file.write(hoy + \" - Closed by SystemExit\\n\")
-        	sys.exit(1)
-	except Exception,e:
-        	os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
-        	log_file = open(LogFile, 'a')
-        	log_file.write(hoy + ' - other - ' + str(e) + '\\n')
-        	log_file.close()
-        	sys.exit(1)
+        	log_file.write(hoy + \" - Closed application due to FireStart not running\\n\")
+		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
+        	sys.exit(1)	
+except (KeyboardInterrupt, SystemExit):
+        os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        log_file = open(LogFile, 'a')
+        log_file.write(hoy + \" - Closed by SystemExit\\n\")
+        sys.exit(1)
+except Exception,e:
+        os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        log_file = open(LogFile, 'a')
+        log_file.write(hoy + ' - other - ' + str(e) + '\\n')
+        log_file.close()
+        sys.exit(1)
 
-""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['application'], parameters['log_file'], parameters['log_file'])
+""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['relayhost'], parameters['email_recipient'], parameters['application'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
 	
 	sender.write(template)
 	sender.close()	
+	current_permissions = os.stat('PySender_%s' % parameters['application'])
+        os.chmod('PySender_%s' % parameters['application'], current_permissions.st_mode | stat.S_IEXEC)
+
 
 connection_file = open('check_connection', 'w')	
 connection_template = """#!/usr/bin/python
@@ -147,6 +177,9 @@ except Exception,e:
 	log_file.close() """ % (parameters['server'], parameters['port'])
 connection_file.write(connection_template)
 connection_file.close()
+current_permissions = os.stat('check_connection')
+os.chmod('check_connection', current_permissions.st_mode | stat.S_IEXEC)
+
 
 start_file = open('FireStart', 'w')
 start_template = """#!/usr/bin/python
@@ -177,6 +210,7 @@ def connection_alive():
 	if int(is_up) == 1:
 		return True
 	elif int(is_up) > 1 or int(is_up) < 1:
+		os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
 		log_file = open(LogFile, 'a')
 		log_file.write(hoy + ' connection from starter - %%s\\n' %% is_up)
 		log_file.close()
@@ -185,7 +219,7 @@ def connection_alive():
 		return False
 
 def processes_alive():
-	process_up = os.popen('ps ax|grep PySender_|egrep -v \"grep\"|wc -l').read()[0]
+	process_up = os.popen('ps ax|grep PySender_|egrep -v \"grep|defunct\"|wc -l').read()[0]
 	if int(process_up) == int(%s):
 		return True
 	elif int(process_up) > int(%s) or int(process_up) < int(%s):
@@ -198,7 +232,8 @@ if connection_alive() == True:
 	for i in senders:
 		subprocess.Popen('./PySender_'+i, stdout=empty_file, stderr=empty_file)
 elif connection_alive() == False:
-	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
+	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
+	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
 	log_file = open(LogFile, 'a')
 	log_file.write(hoy + ' - Unable to establish initial connection with GrayLog\\n')
 	log_file.close()
@@ -245,6 +280,7 @@ try:
 		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 except (KeyboardInterrupt, SystemExit):
+	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
         log_file = open(LogFile, 'a')
@@ -252,6 +288,7 @@ except (KeyboardInterrupt, SystemExit):
 	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
 except Exception,e:
+	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
         log_file = open(LogFile, 'a')
@@ -262,5 +299,8 @@ except Exception,e:
 """ % (apps, parameters['relayhost'], parameters['email_recipient'], len(apps), len(apps), len(apps))
 start_file.write(start_template)
 start_file.close()
+current_permissions = os.stat('FireStart')
+os.chmod('FireStart', current_permissions.st_mode | stat.S_IEXEC)
+
 	
 		
