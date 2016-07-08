@@ -72,7 +72,7 @@ def tail_alive():
         if int(alive) == 1:
                 return True
         elif int(alive) > 1 or int(alive) < 1:
-                log_file = open(LogFile, 'a')
+                log_file = open(LogFile, '+a')
                 log_file.write(hoy + ' - tail - Bad %%s\\n' %% alive)
                 log_file.close()
                 return False
@@ -83,7 +83,7 @@ def firestart():
 	if int(fire_alive) == 1:
 		return True
 	elif int(fire_alive) > 1 or int(fire_alive) < 1:
-		log_file = open(LogFile, 'a')
+		log_file = open(LogFile, '+a')
 		log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
 		log_file.close()
 		return False
@@ -110,7 +110,7 @@ while firestart() == True:
 					logging.info(message)
 			time.sleep(0.1)
 		except Exception,e:
-                        log_file = open(LogFile, 'a')
+                        log_file = open(LogFile, '+a')
                         log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
                         log_file.close()
 		continue
@@ -123,18 +123,18 @@ try:
 	if firestart() == False:
         	os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
         	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\")
-        	log_file = open(LogFile, 'a')
+        	log_file = open(LogFile, '+a')
         	log_file.write(hoy + \" - Closed application due to FireStart not running\\n\")
 		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)	
 except (KeyboardInterrupt, SystemExit):
         os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
-        log_file = open(LogFile, 'a')
+        log_file = open(LogFile, '+a')
         log_file.write(hoy + \" - Closed by SystemExit\\n\")
         sys.exit(1)
 except Exception,e:
         os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
-        log_file = open(LogFile, 'a')
+        log_file = open(LogFile, '+a')
         log_file.write(hoy + ' - other - ' + str(e) + '\\n')
         log_file.close()
         sys.exit(1)
@@ -168,11 +168,11 @@ try:
 	check_it.send('connected to GrayLog')
 	packet = check_it.recv(1024)
 	check_it.close()
-	log_file = open(LogFile, 'a')
+	log_file = open(LogFile, '+a')
 	log_file.write(hoy + ' GrayLog connection lost!!!\\n')
 	log_file.close()
 except Exception,e:
-	log_file = open(LogFile, 'a')
+	log_file = open(LogFile, '+a')
 	log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
 	log_file.close() """ % (parameters['server'], parameters['port'])
 connection_file.write(connection_template)
