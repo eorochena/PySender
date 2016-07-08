@@ -187,9 +187,6 @@ def connection_alive():
 def processes_alive():
 	process_up = os.popen('ps ax|grep PySender_|egrep -v \"grep\"|wc -l').read()[0]
 	if int(process_up) == int(%s):
-		log_file = open(LogFile, 'a')
-		log_file.write(hoy + ' - process good from starter - %%s\\n' %% process_up)
-		log_file.close()
 		return True
 	elif int(process_up) > int(%s) or int(process_up) < int(%s):
 		log_file = open(LogFile, 'a')
