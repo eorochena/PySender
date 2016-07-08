@@ -262,7 +262,7 @@ except Exception,e:
         log_file.close()
 	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
-""" % (apps, len(apps), len(apps), len(apps))
+""" % (apps, parameters['relayhost'], parameters['email_recipient'], len(apps), len(apps), len(apps))
 start_file.write(start_template)
 start_file.close()
 	
