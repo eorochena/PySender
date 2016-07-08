@@ -79,12 +79,12 @@ def tail_alive():
 
 # Check if FireStart is alive and well
 def firestart():
-	fire_alive = os.popen(\"ps ax|grep FireStart|grep -v grep|wc -l\").read()[0]
+	fire_alive = os.popen(\"ps ax|grep FireStart|grep -v grep|wc -l\").readline().replace('\\n', '')
 	if int(fire_alive) == 1:
 		return True
 	elif int(fire_alive) > 1 or int(fire_alive) < 1:
 		log_file = open(LogFile, 'a')
-		log_file.write(hoy + ' - FireStart is dead - %%s' %% fire_alive)
+		log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
 		log_file.close()
 		return False
 
@@ -169,7 +169,7 @@ try:
 	packet = check_it.recv(1024)
 	check_it.close()
 	log_file = open(LogFile, 'a')
-	log_file.write(hoy + ' GrayLog connection lost!!!')
+	log_file.write(hoy + ' GrayLog connection lost!!!\\n')
 	log_file.close()
 except Exception,e:
 	log_file = open(LogFile, 'a')
@@ -184,7 +184,7 @@ os.chmod('check_connection', current_permissions.st_mode | stat.S_IEXEC)
 start_file = open('FireStart', 'w')
 start_template = """#!/usr/bin/python
 
-import subprocess, os, datetime, time, sys, smtplib, socket
+import subprocess, os, datetime, time, sys, smtplib, socket, random
 
 senders = %s
 emptiness = os.devnull
@@ -204,7 +204,6 @@ hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%
 if os.path.isdir("/var/log/PySender") == False:
 	subprocess.call('mkdir /var/log/PySender', shell=True)
 
-
 def connection_alive():
 	is_up = os.popen('ps ax|grep check_connection|grep -v grep|wc -l').read()[0]
 	if int(is_up) == 1:
@@ -218,16 +217,19 @@ def connection_alive():
 	else:
 		return False
 
-def processes_alive():
-	process_up = os.popen('ps ax|grep PySender_|egrep -v \"grep|defunct\"|wc -l').read()[0]
-	if int(process_up) == int(%s):
+def processes_alive(process_status):
+	process_up = os.popen('ps ax|grep %%s|egrep -v \"grep|defunct\"|wc -l' %% process_status).readline().replace('\\n', '')
+	if int(process_up) == 1:
+		log_file = open(LogFile, 'a')
+		log_file.write(hoy + ' - Good - process from starter - %%s\\n' %% process_up)
+		log_file.close()
 		return True
-	elif int(process_up) > int(%s) or int(process_up) < int(%s):
+	elif int(process_up) > 1 or int(process_up) < 1:
 		log_file = open(LogFile, 'a')
 		log_file.write(hoy + ' - process from starter - %%s\\n' %% process_up)
 		log_file.close()
 		return False
-time.sleep(1)
+time.sleep(3)
 if connection_alive() == True:
 	for i in senders:
 		subprocess.Popen('./PySender_'+i, stdout=empty_file, stderr=empty_file)
@@ -243,21 +245,23 @@ elif connection_alive() == False:
 Fail2Connect = 0
 
 while Fail2Connect < 5:
-	if connection_alive() == True and processes_alive() == True and Fail2Connect < 5:
+	process_status = 'PySender_' + random.choice(senders)
+	if connection_alive() == True and processes_alive(process_status) == True and Fail2Connect < 5:
 		continue
-	elif connection_alive() == False and processes_alive() == True and Fail2Connect < 5:
+	elif connection_alive() == False and processes_alive(process_status) == True and Fail2Connect < 5:
 		Fail2Connect += 1
 		subprocess.Popen('./check_connection')
 		time.sleep(1)
-		if connection_alive() == True and processes_alive() == True and Fail2Connect <= 4:
+		if connection_alive() == True and processes_alive(process_status) == True and Fail2Connect <= 4:
 			Fail2Connect = 0
 		else:
 			Fail2Connect += 1
-	elif connection_alive() == True and processes_alive() == False and Fail2Connect < 5:
-		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\")
-		for i in senders:
-			subprocess.Popen('./PySender_'+i, stdout=empty_file, stderr=empty_file)
-	elif connection_alive() == False and processes_alive() == False and Fail2Connect < 5:
+	elif connection_alive() == True and processes_alive(process_status) == False and Fail2Connect < 5:
+        	log_file = open(LogFile, 'a')
+		log_file.write(\"%%s - Restarting PySender %%s\\n\" %% (hoy, process_status))
+		log_file.close()
+		subprocess.Popen('./' + process_status, stdout=empty_file, stderr=empty_file)
+	elif connection_alive() == False and processes_alive(process_status) == False and Fail2Connect < 5:
 		subprocess.Popen('./check_connection')
 		time.sleep(1)
 		if connection_alive() == True:
@@ -296,7 +300,7 @@ except Exception,e:
         log_file.close()
 	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
-""" % (apps, parameters['relayhost'], parameters['email_recipient'], len(apps), len(apps), len(apps))
+""" % (apps, parameters['relayhost'], parameters['email_recipient'])
 start_file.write(start_template)
 start_file.close()
 current_permissions = os.stat('FireStart')
