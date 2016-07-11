@@ -79,7 +79,7 @@ def tail_alive():
 
 # Check if FireStart is alive and well
 def firestart():
-	fire_alive = os.popen(\"ps ax|grep FireStart|grep -v grep|wc -l\").readline().replace('\\n', '')
+	fire_alive = os.popen('ps ax|grep FireStart|egrep -v \"grep|log\"|wc -l').readline().replace('\\n', '')
 	if int(fire_alive) == 1:
 		return True
 	elif int(fire_alive) > 1 or int(fire_alive) < 1:
