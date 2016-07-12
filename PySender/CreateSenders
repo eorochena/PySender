@@ -53,12 +53,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 logger.addHandler(GelfTcpHandler(host=graylog_server, port=graylog_port, _app_name='%s', _ip_address=ip_address, _hostname=hostname, compress=False))
 
-## Application log
-#LogDir = \"/var/log/PySender/\"
-#LogFile = \"/var/log/PySender/%s.log\"  
-#hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-#if os.path.isdir(LogDir) == False:
-#        subprocess.call('mkdir /var/log/PySender', shell=True)
+# Application log
+LogDir = \"/var/log/PySender/\"
+LogFile = \"/var/log/PySender/%s.log\"  
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir(LogDir) == False:
+        subprocess.call('mkdir /var/log/PySender', shell=True)
 
 
 # Email Settings
@@ -72,6 +72,9 @@ def tail_alive():
         if int(alive) == 1:
                 return True
         elif int(alive) > 1 or int(alive) < 1:
+              #  log_file = open(LogFile, 'a+')
+              #  log_file.write(hoy + ' - tail - Bad %%s\\n' %% alive)
+              #  log_file.close()
                 return False
 
 # Check if FireStart is alive and well
@@ -80,6 +83,9 @@ def firestart():
 	if int(fire_alive) == 1:
 		return True
 	elif int(fire_alive) > 1 or int(fire_alive) < 1:
+		#log_file = open(LogFile, 'a+')
+		#log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
+		#log_file.close()
 		return False
 
 # Dealing with multiline log messages
@@ -104,7 +110,10 @@ while firestart() == True:
 					logging.info(message)
 			time.sleep(0.1)
 		except Exception,e:
-                        print 'Ops'
+                	#log_file = open(LogFile, 'a+')
+                        #log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
+                        #log_file.close()
+			print "close"
 		continue
 	elif tail_alive() == False:
 		follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
@@ -115,13 +124,20 @@ try:
 	if firestart() == False:
         	os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
         	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\")
+        	#log_file = open(LogFile, 'a+')
+        	#log_file.write(hoy + \" - Closed application due to FireStart not running\\n\")
 		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)	
 except (KeyboardInterrupt, SystemExit):
         os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        #log_file = open(LogFile, 'a+')
+        #log_file.write(hoy + \" - Closed by SystemExit\\n\")
         sys.exit(1)
 except Exception,e:
         os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        #log_file = open(LogFile, 'a+')
+        #log_file.write(hoy + ' - other - ' + str(e) + '\\n')
+        #log_file.close()
         sys.exit(1)
 
 """ % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['relayhost'], parameters['email_recipient'], parameters['application'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
@@ -140,12 +156,12 @@ import socket, datetime, os
 graylog_server = '%s'
 port = %s
 
-## Application log
-#LogDir = \"/var/log/PySender/\"
-#LogFile = \"/var/log/PySender/check_connection.log\"  
-#hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-#if os.path.isdir(LogDir) == False:
-#        subprocess.call('mkdir /var/log/PySender', shell=True)
+# Application log
+LogDir = \"/var/log/PySender/\"
+LogFile = \"/var/log/PySender/check_connection.log\"  
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir(LogDir) == False:
+        subprocess.call('mkdir /var/log/PySender', shell=True)
 
 try:
 	check_it = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -153,8 +169,14 @@ try:
 	check_it.send('connected to GrayLog')
 	packet = check_it.recv(1024)
 	check_it.close()
+	#log_file = open(LogFile, 'a+')
+	#log_file.write(hoy + ' GrayLog connection lost!!!\\n')
+	#log_file.close()
 except Exception,e:
-	print 'Bye' """ % (parameters['server'], parameters['port'])
+	print "Bye"
+	#log_file = open(LogFile, 'a+')
+	#log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
+	#log_file.close() """ % (parameters['server'], parameters['port'])
 connection_file.write(connection_template)
 connection_file.close()
 current_permissions = os.stat('check_connection')
@@ -179,10 +201,10 @@ email_recipient = '%s'
 email_message = \"Subject: PySender stop sending messages from %%s\\n\\nPySender has stopped sending messages to GrayLog from %%s(%%s)\" %% (hostname, hostname, ip_address) 
 
 ## Application log
-#LogFile = \"/var/log/PySender/FireStart.log\"
-#hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-#if os.path.isdir("/var/log/PySender") == False:
-#	subprocess.call('mkdir /var/log/PySender', shell=True)
+LogFile = \"/var/log/PySender/FireStart.log\"
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir("/var/log/PySender") == False:
+	subprocess.call('mkdir /var/log/PySender', shell=True)
 
 def connection_alive():
 	is_up = os.popen('ps ax|grep check_connection|grep -v grep|wc -l').read()[0]
@@ -190,15 +212,28 @@ def connection_alive():
 		return True
 	elif int(is_up) > 1 or int(is_up) < 1:
 		os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
+		#log_file = open(LogFile, 'a+')
+		#log_file.write(hoy + ' connection from starter - %%s\\n' %% is_up)
+		#log_file.close()
 		return False
 	else:
 		return False
 
 def processes_alive(process_status):
-	process_up = os.popen('ps ax|grep %%s|egrep -v \"grep|defunct\"|wc -l' %% process_status).readline().replace('\\n', '')
-	if int(process_up) == 1:
-		return True
-	elif int(process_up) > 1 or int(process_up) < 1:
+	process_up = os.popen(\"ps ax|grep %%s|egrep -v 'grep|defunct'|awk '{print $6}'\" %% process_status).read().replace('\\n', ' ').split()
+	if len(process_up) == 1:
+		if process_status == process_up[0].replace('./', ''):
+			return True
+	elif len(process_up) > 1:
+		os.popen(\"ps ax|grep %%s|awk '{print $1}'|xargs kill\" %% process_status)
+		log_file = open(LogFile, 'a+')
+		log_file.write(hoy + ' - Fuck - %%s\\n' %% process_up)
+		log_file.close()
+		return False
+	else:
+		log_file = open(LogFile, 'a+')
+		log_file.write(hoy + ' - Fuck, Fuck %%s\\n' %% process_up)
+		log_file.close()
 		return False
 time.sleep(3)
 if connection_alive() == True:
@@ -207,6 +242,9 @@ if connection_alive() == True:
 elif connection_alive() == False:
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
+	#log_file = open(LogFile, 'a+')
+	#log_file.write(hoy + ' - Unable to establish initial connection with GrayLog\\n')
+	#log_file.close()
 	sys.exit(1)
 	
 
@@ -225,6 +263,9 @@ while Fail2Connect < 5:
 		else:
 			Fail2Connect += 1
 	elif connection_alive() == True and processes_alive(process_status) == False and Fail2Connect < 5:
+        	log_file = open(LogFile, 'a+')
+		log_file.write(\"%%s - Restarting PySender %%s\\n\" %% (hoy, process_status))
+		log_file.close()
 		subprocess.Popen('./' + process_status, stdout=empty_file, stderr=empty_file)
 	elif connection_alive() == False and processes_alive(process_status) == False and Fail2Connect < 5:
 		subprocess.Popen('./check_connection')
@@ -234,6 +275,9 @@ while Fail2Connect < 5:
 		else:
 			Fail2Connect += 1
 	elif Fail2Connect == 5:
+        	#log_file = open(LogFile, 'a+')
+		#log_file.write(\"%%s - Unable to connect to GrayLog\\n\" %% hoy)
+		#log_file.close()
                 break
 
 try:
@@ -241,18 +285,25 @@ try:
 		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 		os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
                 print \"%%s - Tried to restablish connection %%s times - Closing Down :(\" %% (hoy, Fail2Connect)
+        	#log_file = open(LogFile, 'a+')
+        	#log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
 		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 except (KeyboardInterrupt, SystemExit):
 	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
+        #log_file = open(LogFile, 'a+')
+        #log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
 	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
 except Exception,e:
 	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
+        #log_file = open(LogFile, 'a+')
+        #log_file.write(hoy + ' - other - ' + str(e) + '\\n')
+        #log_file.close()
 	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
 """ % (apps, parameters['relayhost'], parameters['email_recipient'])
