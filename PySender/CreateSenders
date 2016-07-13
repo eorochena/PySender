@@ -7,21 +7,21 @@ read_it = conf_file.readlines()
 parameters = {}
 apps = []
 for i in read_it:
-	if 'server' in i:
+	if 'server' in i and i.find('#') == 0:
 		parameters['server'] = i.split('"')[1]
-	elif 'port' in i:
+	elif 'port' in i and i.find('#') == 0:
 		parameters['port'] = i.split('"')[1]
 for i in read_it:
-	if 'relayhost' in i:
+	if 'relayhost' in i and i.find('#') == 0:
 		parameters['relayhost'] = i.split('"')[1]
-	elif 'email_recipient' in i:
+	elif 'email_recipient' in i and i.find('#') == 0:
 		parameters['email_recipient'] = i.split('"')[1]
 for i in read_it:
-	if 'application' in i:
+	if 'application' in i and i.find('#') == 0:
 		parameters['application'] = i.split('"')[1]
 		apps.append(parameters['application'])
 		continue
-	elif 'log_file' in i:
+	elif 'log_file' in i and i.find('#') == 0:
 		parameters['log_file'] = i.split('"')[1]
 	else:
 		continue
