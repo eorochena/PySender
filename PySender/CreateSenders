@@ -7,21 +7,21 @@ read_it = conf_file.readlines()
 parameters = {}
 apps = []
 for i in read_it:
-	if 'server' in i and i.find('#') == 0:
+	if 'server' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
-	elif 'port' in i and i.find('#') == 0:
+	elif 'port' in i and i.find('#') == -1:
 		parameters['port'] = i.split('"')[1]
 for i in read_it:
-	if 'relayhost' in i and i.find('#') == 0:
+	if 'relayhost' in i and i.find('#') == -1:
 		parameters['relayhost'] = i.split('"')[1]
-	elif 'email_recipient' in i and i.find('#') == 0:
+	elif 'email_recipient' in i and i.find('#') == -1:
 		parameters['email_recipient'] = i.split('"')[1]
 for i in read_it:
-	if 'application' in i and i.find('#') == 0:
+	if 'application' in i and i.find('#') == -1:
 		parameters['application'] = i.split('"')[1]
 		apps.append(parameters['application'])
 		continue
-	elif 'log_file' in i and i.find('#') == 0:
+	elif 'log_file' in i and i.find('#') == -1:
 		parameters['log_file'] = i.split('"')[1]
 	else:
 		continue
@@ -38,6 +38,8 @@ graylog_port = %s
 
 # File to read
 filename = '%s'
+
+	
 
 # Server settings
 ip_address = socket.gethostbyname(socket.gethostname())
@@ -60,6 +62,13 @@ hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%
 if os.path.isdir(LogDir) == False:
         subprocess.call('mkdir /var/log/PySender', shell=True)
 
+
+# Checking if log file exists
+if os.path.isfile(filename) == False:
+	log_file = open(LogFile, 'a+')
+	log_file.write(hoy + ' -  couldn't find %%s during initial startup\\n' %% filename)
+	log_file.close()
+	sys.exit(1)
 
 # Email Settings
 email_server = smtplib.SMTP('%s', 25)
