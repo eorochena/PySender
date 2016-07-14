@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, stat
+import os, stat, sys
 
 conf_file = open('../sender.conf', 'r')
 read_it = conf_file.readlines()
@@ -21,8 +21,13 @@ for i in read_it:
 		parameters['application'] = i.split('"')[1]
 		apps.append(parameters['application'])
 		continue
-	elif 'log_file' in i and i.find('#') == -1:
+	elif 'log_file' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == True:
 		parameters['log_file'] = i.split('"')[1]
+	elif 'log_file' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == False:	
+		print parameters['log_file'], " doesn't exists, skipping"
+		del parameters['application']
+		del parameters['log_file']
+		pass
 	else:
 		continue
 
@@ -38,8 +43,6 @@ graylog_port = %s
 
 # File to read
 filename = '%s'
-
-	
 
 # Server settings
 ip_address = socket.gethostbyname(socket.gethostname())
@@ -62,14 +65,6 @@ hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%
 if os.path.isdir(LogDir) == False:
         subprocess.call('mkdir /var/log/PySender', shell=True)
 
-
-# Checking if log file exists
-if os.path.isfile(filename) == False:
-	log_file = open(LogFile, 'a+')
-	log_file.write(hoy + ' -  couldn't find %%s during initial startup\\n' %% filename)
-	log_file.close()
-	sys.exit(1)
-
 # Email Settings
 email_server = smtplib.SMTP('%s', 25)
 email_recipient = '%s'
@@ -88,13 +83,19 @@ def tail_alive():
 
 # Check if FireStart is alive and well
 def firestart():
-	fire_alive = os.popen('ps ax|grep FireStart|egrep -v \"grep|log\"|wc -l').readline().replace('\\n', '')
-	if int(fire_alive) == 1:
-		return True
-	elif int(fire_alive) > 1 or int(fire_alive) < 1:
-		#log_file = open(LogFile, 'a+')
-		#log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
-		#log_file.close()
+	fire_alive = os.popen(\"ps ax|grep FireStart|egrep -v 'grep|log|defunct'|awk '{print $6}'\").read().replace('\\n', ' ').split()
+	if len(fire_alive) >= 1:
+		if fire_alive[0].split('/')[-1] == 'FireStart':
+			return True
+		else:
+			log_file = open(LogFile, 'a+')
+			log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive[0].split('/')[-1])
+			log_file.close()
+			return False
+	elif len(fire_alive) < 1:
+		log_file = open(LogFile, 'a+')
+		log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
+		log_file.close()
 		return False
 
 # Dealing with multiline log messages
@@ -233,15 +234,17 @@ def processes_alive(process_status):
 	if len(process_up) == 1:
 		if process_status == process_up[0].replace('./', ''):
 			return True
+		else:
+			return False
 	elif len(process_up) > 1:
 		os.popen(\"ps ax|grep %%s|awk '{print $1}'|xargs kill\" %% process_status)
 		log_file = open(LogFile, 'a+')
-		log_file.write(hoy + ' - Fuck - %%s\\n' %% process_up)
+		log_file.write(hoy + ' - Multiple processes - %%s\\n' %% process_up)
 		log_file.close()
 		return False
-	else:
+	elif len(process_up) < 1:
 		log_file = open(LogFile, 'a+')
-		log_file.write(hoy + ' - Fuck, Fuck %%s\\n' %% process_up)
+		log_file.write(hoy + ' - Not running - %%s\\n' %% process_up)
 		log_file.close()
 		return False
 time.sleep(3)
