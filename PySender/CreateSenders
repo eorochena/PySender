@@ -6,6 +6,12 @@ conf_file = open('../sender.conf', 'r')
 read_it = conf_file.readlines()
 parameters = {}
 apps = []
+
+for i in read_it:
+	if 'file_location' in i and i.find('#') == -1:
+		parameters['file_location'] = i.split('"')[1]
+		if os.path.isdir(parameters['file_location']) == False
+        		subprocess.call('mkdir %s' % parameters['file_location'], shell=True)
 for i in read_it:
 	if 'server' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
@@ -31,7 +37,7 @@ for i in read_it:
 	else:
 		continue
 
-	sender = open('PySender_%s' % parameters['application'], 'w')
+	sender = open('%s/PySender_%s' % (parameters['file_location'], parameters['application']), 'w')
 	template = """#!/usr/bin/python
 
 import time, logging, os, sys, subprocess, select, datetime, re, socket, smtplib
@@ -89,7 +95,7 @@ def firestart():
 			return True
 		else:
 			log_file = open(LogFile, 'a+')
-			log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive[0].split('/')[-1])
+			log_file.write(hoy + ' - FireStart is really dead - %%s\\n' %% fire_alive[0].split('/')[-1])
 			log_file.close()
 			return False
 	elif len(fire_alive) < 1:
@@ -154,11 +160,11 @@ except Exception,e:
 	
 	sender.write(template)
 	sender.close()	
-	current_permissions = os.stat('PySender_%s' % parameters['application'])
-        os.chmod('PySender_%s' % parameters['application'], current_permissions.st_mode | stat.S_IEXEC)
+	current_permissions = os.stat('%s/PySender_%s' % (parameters['file_location'], parameters['application']))
+        os.chmod('%s/PySender_%s' % (parameters['file_location'], parameters['application']), current_permissions.st_mode | stat.S_IEXEC)
 
 
-connection_file = open('check_connection', 'w')	
+connection_file = open('%s/check_connection' % parameters['file_location'], 'w')	
 connection_template = """#!/usr/bin/python
 
 import socket, datetime, os
@@ -189,11 +195,11 @@ except Exception,e:
 	#log_file.close() """ % (parameters['server'], parameters['port'])
 connection_file.write(connection_template)
 connection_file.close()
-current_permissions = os.stat('check_connection')
-os.chmod('check_connection', current_permissions.st_mode | stat.S_IEXEC)
+current_permissions = os.stat('%s/check_connection' % parameters['file_location'])
+os.chmod('%s/check_connection' % parameters['file_location'], current_permissions.st_mode | stat.S_IEXEC)
 
 
-start_file = open('FireStart', 'w')
+start_file = open('%s/FireStart' % parameters['file_location'], 'w')
 start_template = """#!/usr/bin/python
 
 import subprocess, os, datetime, time, sys, smtplib, socket, random
@@ -201,9 +207,11 @@ import subprocess, os, datetime, time, sys, smtplib, socket, random
 senders = %s
 emptiness = os.devnull
 empty_file = open(emptiness, 'w')
-subprocess.Popen('./check_connection')
 ip_address = socket.gethostbyname(socket.gethostname())
 hostname = socket.gethostname()
+
+# Establish initial connection to GrayLog
+subprocess.Popen('%s/check_connection')
 
 # Email Settings
 email_server = smtplib.SMTP('%s', 25)
@@ -230,14 +238,18 @@ def connection_alive():
 		return False
 
 def processes_alive(process_status):
-	process_up = os.popen(\"ps ax|grep %%s|egrep -v 'grep|defunct'|awk '{print $6}'\" %% process_status).read().replace('\\n', ' ').split()
+	process_up = os.popen(\"ps ax|grep %%s|egrep -v 'grep|<defunct>'|awk '{print $6}'\" %% process_status).read().replace('\\n', ' ').split()
 	if len(process_up) == 1:
 		if process_status == process_up[0].replace('./', ''):
 			return True
 		else:
+			log_file = open(LogFile, 'a+')
+			log_file.write(hoy + ' - something is up with the output - %%s\\n' %% process_up)
+			log_file.close()
 			return False
 	elif len(process_up) > 1:
-		os.popen(\"ps ax|grep %%s|awk '{print $1}'|xargs kill\" %% process_status)
+		#os.popen(\"ps ax|grep %%s|awk '{print $1}'|xargs kill\" %% process_status)
+		time.sleep(1)
 		log_file = open(LogFile, 'a+')
 		log_file.write(hoy + ' - Multiple processes - %%s\\n' %% process_up)
 		log_file.close()
@@ -278,7 +290,7 @@ while Fail2Connect < 5:
         	log_file = open(LogFile, 'a+')
 		log_file.write(\"%%s - Restarting PySender %%s\\n\" %% (hoy, process_status))
 		log_file.close()
-		subprocess.Popen('./' + process_status, stdout=empty_file, stderr=empty_file)
+		#subprocess.Popen('./' + process_status, stdout=empty_file, stderr=empty_file)
 	elif connection_alive() == False and processes_alive(process_status) == False and Fail2Connect < 5:
 		subprocess.Popen('./check_connection')
 		time.sleep(1)
@@ -318,11 +330,11 @@ except Exception,e:
         #log_file.close()
 	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
-""" % (apps, parameters['relayhost'], parameters['email_recipient'])
+""" % (apps, parameters['file_location'], parameters['relayhost'], parameters['email_recipient'])
 start_file.write(start_template)
 start_file.close()
-current_permissions = os.stat('FireStart')
-os.chmod('FireStart', current_permissions.st_mode | stat.S_IEXEC)
+current_permissions = os.stat('%s/FireStart' % parameters['file_location'])
+os.chmod('%s/FireStart' % parameters['file_location'], current_permissions.st_mode | stat.S_IEXEC)
 
 	
 		
