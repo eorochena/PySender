@@ -9,9 +9,9 @@ apps = []
 
 for i in read_it:
 	if 'file_location' in i and i.find('#') == -1:
-		parameters['file_location'] = i.split('"')[1]
-		if os.path.isdir(parameters['file_location']) == False
-        		subprocess.call('mkdir %s' % parameters['file_location'], shell=True)
+		parameters['file_location'] = i.split('"')[1] + '/PySender'
+		if os.path.isdir(parameters['file_location']) == False:
+        		subprocess.call('mkdir %s/PySender' % parameters['file_location'], shell=True)
 for i in read_it:
 	if 'server' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
