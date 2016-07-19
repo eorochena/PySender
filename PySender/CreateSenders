@@ -56,8 +56,8 @@ hostname = socket.gethostname()
 
 # Reading file contents
 follow = subprocess.Popen(['tail', '-F', filename, '|', 'grep', '-v', 'SYS'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-polling = select.poll()
-polling.register(follow.stdout)
+#polling = select.poll()
+#polling.register(follow.stdout)
 
 # pygelf and logging parameters
 logging.basicConfig(level=logging.INFO)
@@ -94,20 +94,20 @@ def firestart():
 		if fire_alive[0].split('/')[-1] == 'FireStart':
 			return True
 		else:
-			log_file = open(LogFile, 'a+')
-			log_file.write(hoy + ' - FireStart is really dead - %%s\\n' %% fire_alive[0].split('/')[-1])
-			log_file.close()
+			#log_file = open(LogFile, 'a+')
+			#log_file.write(hoy + ' - FireStart is really dead - %%s\\n' %% fire_alive[0].split('/')[-1])
+			#log_file.close()
 			return False
 	elif len(fire_alive) < 1:
-		log_file = open(LogFile, 'a+')
-		log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
-		log_file.close()
+		#log_file = open(LogFile, 'a+')
+		#log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
+		#log_file.close()
 		return False
 
 # Dealing with multiline log messages
 def logmsg():
         content = ''
-        while tail_alive() == True and firestart() == True:
+        while True:
                 msg = follow.stdout.readline()
                 if re.search(r'(\d+:\d+:\d+)', msg):
                         yield content
@@ -121,8 +121,7 @@ while firestart() == True:
 	if tail_alive() == True:
 		try:
 			for line in logmsg():
-				message = '%%s - %%s' %% ('%s', line)
-				logging.info(message)
+				logging.info(line)
 		except Exception,e:
                 	#log_file = open(LogFile, 'a+')
                         #log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
@@ -131,8 +130,6 @@ while firestart() == True:
 		continue
 	elif tail_alive() == False:
 		follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-		polling = select.poll()
-		polling.register(follow.stdout)
 		continue
 try:
 	if firestart() == False:
@@ -154,7 +151,7 @@ except Exception,e:
         #log_file.close()
         sys.exit(1)
 
-""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['relayhost'], parameters['email_recipient'], parameters['application'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
+""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['relayhost'], parameters['email_recipient'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
 	
 	sender.write(template)
 	sender.close()	
