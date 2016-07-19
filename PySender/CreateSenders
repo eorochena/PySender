@@ -120,16 +120,14 @@ def logmsg():
 while firestart() == True:
 	if tail_alive() == True:
 		try:
-			if polling.poll(0.1):
-				for line in logmsg():
-					message = '%%s - %%s' %% ('%s', line)
-					logging.info(message)
-			time.sleep(0.1)
+			for line in logmsg():
+				message = '%%s - %%s' %% ('%s', line)
+				logging.info(message)
 		except Exception,e:
                 	#log_file = open(LogFile, 'a+')
                         #log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
                         #log_file.close()
-			print "close"
+			print \"close\"
 		continue
 	elif tail_alive() == False:
 		follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
@@ -240,11 +238,11 @@ def connection_alive():
 def processes_alive(process_status):
 	process_up = os.popen(\"ps ax|grep %%s|egrep -v 'grep|<defunct>'|awk '{print $6}'\" %% process_status).read().replace('\\n', ' ').split()
 	if len(process_up) == 1:
-		if process_status == process_up[0].replace('./', ''):
+		if process_status == process_up[0].split('/')[-1]:
 			return True
 		else:
 			log_file = open(LogFile, 'a+')
-			log_file.write(hoy + ' - something is up with the output - %%s\\n' %% process_up)
+			log_file.write(hoy + ' - something is up with the output - %%s process_status differs from %%s process_up\\n' %% (process_status, process_up[0]))
 			log_file.close()
 			return False
 	elif len(process_up) > 1:
@@ -262,7 +260,7 @@ def processes_alive(process_status):
 time.sleep(3)
 if connection_alive() == True:
 	for i in senders:
-		subprocess.Popen('./PySender_'+i, stdout=empty_file, stderr=empty_file)
+		subprocess.Popen('%s/PySender_'+i, stdout=empty_file, stderr=empty_file)
 elif connection_alive() == False:
 	os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
 	os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
@@ -330,7 +328,7 @@ except Exception,e:
         #log_file.close()
 	email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         sys.exit(1)
-""" % (apps, parameters['file_location'], parameters['relayhost'], parameters['email_recipient'])
+""" % (apps, parameters['file_location'], parameters['relayhost'], parameters['email_recipient'], parameters['file_location'])
 start_file.write(start_template)
 start_file.close()
 current_permissions = os.stat('%s/FireStart' % parameters['file_location'])
