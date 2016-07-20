@@ -176,7 +176,6 @@ if os.path.isdir(LogDir) == False:
 
 try:
 	check_it = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	check_it.settimeout(0.5)
 	check_it.connect((graylog_server, port))
 	check_it.send('connected to GrayLog')
 	packet = check_it.recv(1024)
