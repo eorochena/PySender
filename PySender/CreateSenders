@@ -125,9 +125,9 @@ while True:
 			for line in logmsg():
 				logging.info(line)
 		except Exception,e:
-                	#log_file = open(LogFile, 'a+')
-                        #log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
-                        #log_file.close()
+                	log_file = open(LogFile, 'a+')
+                        log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
+                        log_file.close()
 			print \"close\"
 		continue
 	elif tail_alive() == False and firestart() == True:
