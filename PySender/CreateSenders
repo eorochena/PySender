@@ -246,7 +246,7 @@ def childProcess():
 	## Application log
 	LogFile = \"/var/log/PySender/FireStart.log\"
 	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-	if os.path.isdir("/var/log/PySender") == False:
+	if os.path.isdir(\"/var/log/PySender\") == False:
 		subprocess.call('mkdir /var/log/PySender', shell=True)
 
 	def connection_alive():
