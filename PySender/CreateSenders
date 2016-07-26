@@ -19,6 +19,10 @@ for i in read_it:
 		parameters['port'] = i.split('"')[1]
 	elif 'load_balancer' in i and i.find('#') == -1:
 		parameters['lb_port'] = i.split('"')[1]
+	elif 'graylog_admin_user' in i and i.find('#') == -1:
+		parameters['graylog_admin_user'] = i.split('"')[1]
+	elif 'graylog_admin_password' in i and i.find('#') == -1:
+		parameters['graylog_admin_password'] = i.split('"')[1]
 for i in read_it:
 	if 'relayhost' in i and i.find('#') == -1:
 		parameters['relayhost'] = i.split('"')[1]
@@ -58,8 +62,6 @@ hostname = socket.gethostname()
 
 # Reading file contents
 follow = subprocess.Popen(['tail', '-F', filename, '|', 'grep', '-v', 'SYS'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-#polling = select.poll()
-#polling.register(follow.stdout)
 
 # pygelf and logging parameters
 logging.basicConfig(level=logging.INFO)
@@ -138,25 +140,28 @@ while True:
 	
 try:
 	if firestart() == False:
-        	os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        	os.popen(\"ps ax|grep 'tail -F %s'|grep -v grep|awk '{print $1}'|xargs kill -9\")
+        	os.popen(\"ps ax|grep 'tail -F %s|grep -v SYS'|grep -v 'grep tail'|awk '{print $1}'|xargs kill -9\")
         	os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\")
         	#log_file = open(LogFile, 'a+')
         	#log_file.write(hoy + \" - Closed application due to FireStart not running\\n\")
 		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)	
 except (KeyboardInterrupt, SystemExit):
-        os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        os.popen(\"ps ax|grep 'tail -F %s'|grep -v grep|awk '{print $1}'|xargs kill -9\")
+        os.popen(\"ps ax|grep 'tail -F %s|grep -v SYS'|grep -v 'grep tail'|awk '{print $1}'|xargs kill -9\")
         #log_file = open(LogFile, 'a+')
         #log_file.write(hoy + \" - Closed by SystemExit\\n\")
         sys.exit(1)
 except Exception,e:
-        os.popen(\"ps ax|grep 'tail -F %s'|awk '{print $1}'|xargs kill -9\")
+        os.popen(\"ps ax|grep 'tail -F %s'|grep -v grep|awk '{print $1}'|xargs kill -9\")
+        os.popen(\"ps ax|grep 'tail -F %s|grep -v SYS'|grep -v 'grep tail'|awk '{print $1}'|xargs kill -9\")
         #log_file = open(LogFile, 'a+')
         #log_file.write(hoy + ' - other - ' + str(e) + '\\n')
         #log_file.close()
         sys.exit(1)
 
-""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['relayhost'], parameters['email_recipient'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
+""" % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['relayhost'], parameters['email_recipient'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
 	
 	sender.write(template)
 	sender.close()	
@@ -167,7 +172,7 @@ except Exception,e:
 connection_file = open('%s/check_connection' % parameters['file_location'], 'w')	
 connection_template = """#!/usr/bin/python
 
-import socket, datetime, os
+import socket, datetime, os, sys
 
 graylog_server = '%s'
 port = %s
@@ -189,7 +194,7 @@ try:
 	#log_file.write(hoy + ' GrayLog connection lost!!!\\n')
 	#log_file.close()
 except Exception,e:
-	print "Bye"
+	sys.exit(1)
 	#log_file = open(LogFile, 'a+')
 	#log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
 	#log_file.close() """ % (parameters['server'], parameters['port'])
@@ -223,6 +228,41 @@ LB_Status.close()
 current_permissions = os.stat('%s/LB_Status' % parameters['file_location'])
 os.chmod('%s/LB_Status' % parameters['file_location'], current_permissions.st_mode | stat.S_IEXEC)
 
+Is_Processing = open('%s/Graylog_Processing' % parameters['file_location'], 'w')
+Processing_template = """#!/usr/bin/python
+
+import os, requests, sys, json
+
+graylog_server = '%s'
+load_balancer_port = %s
+servers = []
+results = []
+
+try:
+	response = requests.get('http://%%s:%%s/cluster' %% (graylog_server, load_balancer_port), timeout = 1, headers={'Connection':'close'}, auth = ('%s', '%s'))
+	val = json.loads(response.content)
+	for i in val:
+		servers.append(i)
+	for i in range(len(servers)):
+                if val[servers[i]]['is_processing'] == True:
+                        results.append('True')
+                        continue
+                elif val[servers[i]]['is_processing'] == False:
+                        results.append('False')
+                        continue
+        if 'False' in results:
+                print False
+                sys.exit(1)
+        else:
+                print True
+                sys.exit(0)
+except requests.exceptions.RequestException as e:
+	print False
+	sys.exit(1)
+""" % (parameters['server'], parameters['lb_port'], parameters['graylog_admin_user'], parameters['graylog_admin_password'])
+Is_Processing.write(Processing_template)
+Is_Processing.close()
+
 start_file = open('%s/FireStart' % parameters['file_location'], 'w')
 start_template = """#!/usr/bin/python
 
@@ -246,7 +286,7 @@ def childProcess():
 	## Application log
 	LogFile = \"/var/log/PySender/FireStart.log\"
 	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-	if os.path.isdir(\"/var/log/PySender\") == False:
+	if os.path.isdir('/var/log/PySender') == False:
 		subprocess.call('mkdir /var/log/PySender', shell=True)
 
 	def connection_alive():
@@ -254,7 +294,7 @@ def childProcess():
 		if int(is_up) == 1:
 			return True
 		elif int(is_up) > 1 or int(is_up) < 1:
-			os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
+			#os.popen(\"ps ax|grep check_connection|grep -v grep|awk '{print $1}'|xargs kill -9\")
 			return False
 		else:
 			return False
@@ -262,6 +302,16 @@ def childProcess():
 	def LB_Status():
 		is_up = os.popen('%s/LB_Status').read()
 		if 'ALIVE' in is_up:
+			return True
+		else:
+			log_file = open(LogFile, 'a+')
+			log_file.write(hoy + ' - dead - %%s\\n' %% is_up)
+			log_file.close()
+			return False
+	
+	def Is_Processing():
+		is_up = os.popen('%s/Graylog_Processing').read()
+		if 'True' in is_up:
 			return True
 		else:
 			log_file = open(LogFile, 'a+')
@@ -292,32 +342,38 @@ def childProcess():
 			#log_file.close()
 			return False
 
-	if connection_alive() == True and LB_Status() == True:
+	if connection_alive() == True and LB_Status() == True and Is_Processing() == True:
 		for i in senders:
 			subprocess.Popen('%s/PySender_'+i, stdout=empty_file, stderr=empty_file)
 	elif connection_alive() == False or LB_Status() == False:
-		os.popen(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep LB_Status|grep -v grep|awk '{print $1}'|xargs kill\")
+		subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'LB_Status'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'Graylog_Processing'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
 		sys.exit(1)
 	
 
 	Fail2Connect = 0
 	BadLB = 0
+	Processing = 0
 
-	while Fail2Connect < 5 or BadLB < 3:
+	while Fail2Connect < 5 or BadLB < 1 or Processing < 1:
 		process_status = 'PySender_' + random.choice(senders)
-		if connection_alive() == True and LB_Status() == True and processes_alive(process_status) == True:
+		if connection_alive() == True and LB_Status() == True and processes_alive(process_status) == True and Is_Processing() == True:
 			continue
-		elif connection_alive() == False and LB_Status() == True and processes_alive(process_status) == True:
+		elif connection_alive() == False and LB_Status() == True and processes_alive(process_status) == True and Is_Processing() == True:
 			Fail2Connect += 1
-			subprocess.Popen('%s/check_connection')
-			time.sleep(1)
-			if connection_alive() == True and LB_Status() == True and processes_alive(process_status) == True and Fail2Connect <= 4:
+			subprocess.Popen('%s/check_connection', shell=True)
+			time.sleep(2)
+			if connection_alive() == True and LB_Status() == True and processes_alive(process_status) == True and Is_Processing() == True and Fail2Connect <= 4:
+        			log_file = open(LogFile, 'a+')
+				log_file.write(\"%%s - is alive %%s\\n\" %% (hoy, process_status))
+				log_file.close()
 				Fail2Connect = 0
 			else:
 				Fail2Connect += 1
-		elif connection_alive() == True and LB_Status() == False and processes_alive(process_status) == True:
+		elif connection_alive() == True and LB_Status() == False and processes_alive(process_status) == True and Is_Processing() == True:
 			Fail2Connect += 1
 			subprocess.Popen('%s/LB_Status')
 			if connection_alive() == True and LB_Status() == True and processes_alive(process_status) == True and Fail2Connect <= 4 and BadLB <= 2:
@@ -325,55 +381,69 @@ def childProcess():
 			else:
 				BadLB += 1
 				Fail2Connect += 1
-		elif connection_alive() == True and LB_Status() == True and processes_alive(process_status) == False:
+		elif connection_alive() == True and LB_Status() == True and processes_alive(process_status) == True and Is_Processing() == False:
+			Fail2Connect += 1
+			subprocess.Popen('%s/Graylog_Processing')
+			if connection_alive() == True and LB_Status() == True and processes_alive(process_status) == True and Is_Processing() == True and Fail2Connect <= 4 and BadLB <= 2:
+				continue
+			else:
+				Processing += 1
+				Fail2Connect += 1
+		elif connection_alive() == True and LB_Status() == True and processes_alive(process_status) == False and Is_Processing() == True:
         		log_file = open(LogFile, 'a+')
 			log_file.write(\"%%s - Restarting PySender %%s\\n\" %% (hoy, process_status))
 			log_file.close()
 			#subprocess.Popen('./' + process_status, stdout=empty_file, stderr=empty_file)
-		elif connection_alive() == False and LB_Status() == False and processes_alive(process_status) == False:
+		elif connection_alive() == False and LB_Status() == False and processes_alive(process_status) == False and Is_Processing() == False:
 			subprocess.Popen('%s/check_connection')
 			subprocess.Popen('%s/LB_Status')
-			if connection_alive() == True and LB_Status() == True:
+			subprocess.Popen('%s/Graylog_Processing')
+			if connection_alive() == True and LB_Status() == True and Is_Processing() == True:
 				Fail2Connect = 0
 			else:
 				BadLB += 1
+				Processing += 1
 				Fail2Conect += 1
-		elif Fail2Connect >= 5 or BadLB >= 3:
+		elif Fail2Connect >= 5 or BadLB >= 1 or Processing >= 1:
         		#log_file = open(LogFile, 'a+')
 			#log_file.write(\"%%s - Unable to connect to GrayLog\\n\" %% hoy)
 			#log_file.close()
                 	break
 
 	try:
-        	if Fail2Connect >= 5 or BadLB >= 3:
-			os.popen(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill\")
-			os.popen(\"ps ax|grep LB_Status|grep -v grep|awk '{print $1}'|xargs kill\")
-			os.popen(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill\")
+        	if Fail2Connect >= 5 or BadLB >= 1 or Processing >= 1:
+			subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", shell=True)
+			subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+			subprocess.call(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+			subprocess.call(\"ps ax|grep 'LB_Status'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+			subprocess.call(\"ps ax|grep 'Graylog_Processing'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
                 	print \"%%s - Tried to restablish connection %%s times - Closing Down :(\" %% (hoy, Fail2Connect)
         		#log_file = open(LogFile, 'a+')
         		#log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
 			#log_file.close()
-			email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
+			#email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         		sys.exit(1)
 	except (KeyboardInterrupt, SystemExit):
-		os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep LB_Status|grep -v grep|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
+		subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'LB_Status'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'Graylog_Processing'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
         	#log_file = open(LogFile, 'a+')
         	#log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
 		#log_file.close()
-		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
+		#email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 	except Exception,e:
-		os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep LB_Status|grep -v grep|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill\")
+		subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'LB_Status'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
+		subprocess.call(\"ps ax|grep 'Graylog_Processing'|grep -v grep|awk '{print $1}'|xargs kill -9\", shell=True)
         	#log_file = open(LogFile, 'a+')
         	#log_file.write(hoy + ' - other - ' + str(e) + '\\n')
         	#log_file.close()
-		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
+		#email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 
 def ParentProcess():
@@ -382,22 +452,28 @@ def ParentProcess():
 		childProcess()
 
 try:
-	if sys.argv[1] == 'start':
+	is_up = os.popen('ps ax|grep FireStart|grep -v grep|wc -l').read()[0]
+	if int(is_up) <= 1 and sys.argv[1] == 'start':
 		ParentProcess()
+		sys.exit(0)
+	elif int(is_up) >= 2 and sys.argv[1] == 'start':
+		subprocess.call('ps ax|grep FireStart|grep -v grep', shell=True)
+		print 'Process is already running'
+		sys.exit(1)
 	elif sys.argv[1] == 'stop':
-		os.popen(\"ps ax|grep check_connection|egrep -v 'grep'|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep PySender_|egrep -v 'grep'|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep LB_Status|egrep -v 'grep'|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep 'tail -F'|egrep -v 'grep'|awk '{print $1}'|xargs kill\")
-		os.popen(\"ps ax|grep 'FireStart'|egrep -v 'vim|grep'|awk '{print $1}'|xargs kill\")
+		os.popen(\"ps ax|grep check_connection|egrep -v 'grep'|awk '{print $1}'|xargs kill -9\")
+		os.popen(\"ps ax|grep PySender_|egrep -v 'grep'|awk '{print $1}'|xargs kill -9\")
+		os.popen(\"ps ax|grep 'tail -F'|egrep -v 'grep'|awk '{print $1}'|xargs kill -9\")
+		os.popen(\"ps ax|grep 'FireStart'|egrep -v 'vim|grep'|awk '{print $1}'|xargs kill -9\")
 		sys.exit(0)
 	else:
+		print int(is_up)
 		print 'invalid option'
 		sys.exit(1)
 except IndexError:
 	print 'Bad'
 	sys.exit(1)
-""" % (apps, parameters['file_location'], parameters['relayhost'], parameters['email_recipient'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'])
+""" % (apps, parameters['file_location'], parameters['relayhost'], parameters['email_recipient'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'])
 start_file.write(start_template)
 start_file.close()
 current_permissions = os.stat('%s/FireStart' % parameters['file_location'])
