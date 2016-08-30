@@ -255,14 +255,14 @@ try:
                                 else:
                                         print True
                                         sys.exit(0)
-                except requests.exceptions.RequestException as e:
+                except:
                         print False
                         sys.exit(1)
         else:
                 print response.content, ' ', response.status_code
                 sys.exit(1)
-except requests.exceptions.RequestException as e:
-        print e
+except:
+        print False
         sys.exit(1)
 
 """ % (parameters['server'], parameters['lb_port'], parameters['graylog_admin_user'], parameters['graylog_admin_password'], parameters['graylog_admin_user'], parameters['graylog_admin_password'])
@@ -354,25 +354,25 @@ def childProcess():
 	Fail2Connect = 0
 	BadGraylog = 0
 
-	while Fail2Connect < 5 or BadGraylog < 5:
+	while Fail2Connect < 3 or BadGraylog < 3:
 		process_status = 'PySender_' + random.choice(senders)
 		if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True:
 			continue
-		elif connection_alive() == False and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 4:
+		elif connection_alive() == False and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 2:
 			Fail2Connect += 1
 			subprocess.Popen('%s/check_connection', stderr=empty_file, stdout=empty_file, shell=True)
 			time.sleep(1)
-			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 4:
+			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 2:
         			log_file = open(LogFile, 'a+')
 				log_file.write(\"%%s - is alive %%s\\n\" %% (hoy, process_status))
 				log_file.close()
 				Fail2Connect = 0
 			else:
 				Fail2Connect += 1
-		elif connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == False and BadGraylog <= 4:
+		elif connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == False and BadGraylog <= 2:
 			BadGraylog += 1
 			subprocess.Popen('%s/Graylog_Status', shell=True)
-			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and BadGraylog <= 4:
+			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and BadGraylog <= 2:
 				BadGraylog = 0
 			else:
 				BadGraylog += 1
@@ -393,22 +393,22 @@ def childProcess():
 			else:
 				BadGraylog += 1
 				Fail2Connect += 1
-		elif Fail2Connect >= 5 or BadGraylog >= 5:
+		elif Fail2Connect >= 3 or BadGraylog >= 3:
         		log_file = open(LogFile, 'a+')
 			log_file.write(\"%%s - Unable to connect to GrayLog\\n\" %% hoy)
 			log_file.close()
                 	break
 
 	try:
-        	if Fail2Connect >= 5 or BadGraylog >= 5:
+        	if Fail2Connect >= 3 or BadGraylog >= 3:
 			subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
                 	print \"%%s - Tried to restablish connection %%s port 1515 and %%s port 12900 - Closing Down :(\" %% (hoy, Fail2Connect, BadGraylog)
-        		#log_file = open(LogFile, 'a+')
-        		#log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
-			#log_file.close()
+        		log_file = open(LogFile, 'a+')
+        		log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
+			log_file.close()
 			email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         		sys.exit(1)
 	except (KeyboardInterrupt, SystemExit):
