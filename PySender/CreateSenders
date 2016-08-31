@@ -255,14 +255,14 @@ try:
                                 else:
                                         print True
                                         sys.exit(0)
-                except:
-                        print False
+                except Exception as e:
+                        print e.message
                         sys.exit(1)
         else:
                 print response.content, ' ', response.status_code
                 sys.exit(1)
-except:
-        print False
+except Exception as e:
+        print e.message
         sys.exit(1)
 
 """ % (parameters['server'], parameters['lb_port'], parameters['graylog_admin_user'], parameters['graylog_admin_password'], parameters['graylog_admin_user'], parameters['graylog_admin_password'])
