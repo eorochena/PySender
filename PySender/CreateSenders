@@ -243,12 +243,16 @@ try:
                                 sys.exit(1)
                         else:
                                 for i in range(len(servers)):
-                                        response = requests.get('http://%%s:%%s/cluster/%%s/journal' %% (graylog_server, load_balancer_port, servers[i]), timeout = 5, headers = {'Connection':'close'}, auth = ('%s', '%s'))
-                                        journal_status = json.loads(response.content)
-                                        if (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100 >= 75:
-                                                journal_capacity.append(\"BAD\")
-                                        elif (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100 <= 74:
-                                                journal_capacity.append(\"GOOD\")
+					try:
+                                        	response = requests.get('http://%%s:%%s/cluster/%%s/journal' %% (graylog_server, load_balancer_port, servers[i]), timeout = 5, headers = {'Connection':'close'}, auth = ('%s', '%s'))
+                                        	journal_status = json.loads(response.content)
+                                        	if (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100 >= 75:
+                                                	journal_capacity.append(\"BAD\")
+                                        	elif (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100 <= 74:
+                                                	journal_capacity.append(\"GOOD\")
+					except Exception as e:
+						print e.message
+						sys.exit(1)
                                 if 'BAD' in journal_capacity:
                                         print False
                                         sys.exit(1)
