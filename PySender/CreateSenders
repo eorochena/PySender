@@ -411,7 +411,7 @@ def childProcess():
 			subprocess.call(\"ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
                 	print \"%%s - Tried to restablish connection %%s port 1515 and %%s port 12900 - Closing Down :(\" %% (hoy, Fail2Connect, BadGraylog)
         		log_file = open(LogFile, 'a+')
-        		log_file.write(\"%%s - Tried to restablish connection %%s times - Closing Down :(\\n\" %% hoy)
+        		log_file.write(\"%%s - Tried to restablish connection several times - Closing Down :(\\n\" %% hoy)
 			log_file.close()
 			email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         		sys.exit(1)
