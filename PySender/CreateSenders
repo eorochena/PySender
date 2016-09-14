@@ -219,10 +219,10 @@ results = []
 journal_capacity = []
 
 try:
-        response = requests.get('http://%%s:%%s/system/lbstatus' %% (graylog_server, load_balancer_port), timeout = 5, headers={'Connection':'close'})
+        response = requests.get('http://%%s:%%s/system/lbstatus' %% (graylog_server, load_balancer_port), timeout = 7, headers={'Connection':'close'})
         if response.content == 'ALIVE':
                 try:
-                        response = requests.get('http://%%s:%%s/cluster' %% (graylog_server, load_balancer_port), timeout = 5, headers={'Connection':'close'}, auth = ('%s', '%s'))
+                        response = requests.get('http://%%s:%%s/cluster' %% (graylog_server, load_balancer_port), timeout = 7, headers={'Connection':'close'}, auth = ('%s', '%s'))
                         val = json.loads(response.content)
                         for i in val:
                                 servers.append(i)
@@ -239,7 +239,7 @@ try:
                         else:
                                 for i in range(len(servers)):
 					try:
-                                        	response = requests.get('http://%%s:%%s/cluster/%%s/journal' %% (graylog_server, load_balancer_port, servers[i]), timeout = 5, headers = {'Connection':'close'}, auth = ('%s', '%s'))
+                                        	response = requests.get('http://%%s:%%s/cluster/%%s/journal' %% (graylog_server, load_balancer_port, servers[i]), timeout = 7, headers = {'Connection':'close'}, auth = ('%s', '%s'))
                                         	journal_status = json.loads(response.content)
                                         	if (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100 >= 75:
                                                 	journal_capacity.append(\"BAD\")
@@ -343,6 +343,10 @@ def childProcess():
 		for i in senders:
 			subprocess.Popen('%s/PySender_%%s' %% i, stdout=empty_file, stderr=empty_file, shell = True)
 	elif connection_alive() == False or GraylogStatus() == False:
+		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+        	log_file = open(LogFile, 'a+')
+        	log_file.write('%%s - Tried to establish initial connection on port 1515 and port 12900 but failed - Closing Down :(\\n' %% hoy)
+		log_file.close()
 		subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
@@ -362,6 +366,7 @@ def childProcess():
 			subprocess.Popen('%s/check_connection', stderr=empty_file, stdout=empty_file, shell=True)
 			time.sleep(1)
 			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 2:
+				hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         			log_file = open(LogFile, 'a+')
 				log_file.write(\"%%s - is alive %%s\\n\" %% (hoy, process_status))
 				log_file.close()
@@ -376,6 +381,7 @@ def childProcess():
 			else:
 				BadGraylog += 1
 		elif connection_alive() == True and processes_alive(process_status) == False and GraylogStatus() == True:
+			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         		log_file = open(LogFile, 'a+')
 			log_file.write(\"%%s - Restarting PySender %%s and killing %%s\\n\" %% (hoy, process_status, process_status.replace('PySender_', '')))
 			log_file.close()
@@ -393,6 +399,7 @@ def childProcess():
 				BadGraylog += 1
 				Fail2Connect += 1
 		elif Fail2Connect >= 3 or BadGraylog >= 3:
+			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         		log_file = open(LogFile, 'a+')
 			log_file.write(\"%%s - Unable to connect to GrayLog\\n\" %% hoy)
 			log_file.close()
@@ -400,6 +407,7 @@ def childProcess():
 
 	try:
         	if Fail2Connect >= 3 or BadGraylog >= 3:
+			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 			subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
@@ -411,24 +419,26 @@ def childProcess():
 			email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         		sys.exit(1)
 	except (KeyboardInterrupt, SystemExit):
+		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 		subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
-        	#log_file = open(LogFile, 'a+')
-        	#log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
-		#log_file.close()
-		#email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
+        	log_file = open(LogFile, 'a+')
+        	log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
+		log_file.close()
+		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 	except Exception,e:
+		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 		subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep PySender_|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
-        	#log_file = open(LogFile, 'a+')
-        	#log_file.write(hoy + ' - other - ' + str(e) + '\\n')
-        	#log_file.close()
-		#email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
+        	log_file = open(LogFile, 'a+')
+        	log_file.write(hoy + ' - other - ' + str(e) + '\\n')
+        	log_file.close()
+		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 
 def ParentProcess():
@@ -437,8 +447,13 @@ def ParentProcess():
 		childProcess()
 
 try:
+	LogFile = \"/var/log/PySender/FireStart.log\"
 	is_up = os.popen('ps ax|grep FireStart|grep -v grep|wc -l').read()[0]
 	if int(is_up) <= 1 and sys.argv[1] == 'start':
+		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+        	log_file = open(LogFile, 'a+')
+        	log_file.write(hoy + ' - started application by user -  \\n')
+        	log_file.close()
 		ParentProcess()
 		sys.exit(0)
 	elif int(is_up) >= 2 and sys.argv[1] == 'start':
@@ -446,6 +461,10 @@ try:
 		print 'Process is already running'
 		sys.exit(1)
 	elif sys.argv[1] == 'stop':
+		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+        	log_file = open(LogFile, 'a+')
+        	log_file.write(hoy + ' - stopped application by user - \\n')
+        	log_file.close()
 		os.popen(\"ps ax|grep check_connection|egrep -v 'grep'|awk '{print $1}'|xargs kill -9\")
 		os.popen(\"ps ax|grep PySender_|egrep -v 'grep'|awk '{print $1}'|xargs kill -9\")
 		os.popen(\"ps ax|grep 'tail -F'|egrep -v 'grep'|awk '{print $1}'|xargs kill -9\")
