@@ -42,7 +42,7 @@ for i in read_it:
 		#	pass
 
 		sender = open('%s/PySender_%s' % (parameters['file_location'], parameters['application']), 'w')
-		template = """#!/opt/rh/python27/root/usr/bin/python
+		template = """#!/usr/bin/python
 
 import time, logging, logging.handlers, os, sys, subprocess, select, datetime, re, socket, smtplib, json
 
@@ -123,7 +123,7 @@ while True:
 	if tail_alive() == True and firestart() == True:
 		try:
 			for line in logmsg():
-				message = '%s:  ' + str(json.dumps(line)) + '\\n'
+				message = '%s:  ' + str(json.dumps(line, ensure_ascii = False).encode('utf8')) + '\\n'
 				logger.info(message)
 		except Exception,e:
                 	log_file = open(LogFile, 'a+')
@@ -286,7 +286,7 @@ def childProcess():
 	subprocess.Popen('%s/check_connection')
 
 	# Email Settings
-	email_server = smtplib.SMTP('%s', 25)
+	email_server = smtplib.SMTP('%s')
 	email_recipient = '%s'
 	email_message = \"Subject: PySender stop sending messages from %%s\\n\\nPySender has stopped sending messages to GrayLog from %%s(%%s)\" %% (hostname, hostname, ip_address) 
 
@@ -417,6 +417,7 @@ def childProcess():
         		log_file.write('%%s - Tried to restablish connection %%s port 1515 and %%s port 12900 - Closing Down :(\\n' %% (hoy, Fail2Connect, BadGraylog))
 			log_file.close()
 			email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
+			email_server.quit()
         		sys.exit(1)
 	except (KeyboardInterrupt, SystemExit):
 		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
@@ -427,7 +428,6 @@ def childProcess():
         	log_file = open(LogFile, 'a+')
         	log_file.write(\"%%s - Closed by SystemExit\\n\" %% hoy)
 		log_file.close()
-		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 	except Exception,e:
 		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
@@ -438,7 +438,6 @@ def childProcess():
         	log_file = open(LogFile, 'a+')
         	log_file.write(hoy + ' - other - ' + str(e) + '\\n')
         	log_file.close()
-		email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
         	sys.exit(1)
 
 def ParentProcess():
