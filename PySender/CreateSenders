@@ -108,14 +108,21 @@ def logmsg():
         content = ''
         while True:
                 msg = follow.stdout.readline()
-		if len(msg) > 0:
-                	if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
-                        	yield content
-                        	content = msg
-                	else:
-                        	content += msg
-		else:
-			break
+		try:
+			if len(msg) > 0 and len(msg) <= 1091867:
+                		if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
+                        		yield content
+                        		content = msg
+                		else:
+                        		content += msg
+			else:
+				break
+		except Exception,e:
+			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+                        log_file = open(LogFile, 'a+')
+                        log_file.write(hoy + ' - logmsg failed - ' + str(e) + '\\n')
+                        log_file.close()
+			continue
         yield content
 
 
@@ -123,7 +130,7 @@ while True:
 	if tail_alive() == True and firestart() == True:
 		try:
 			for line in logmsg():
-				message = '%s:  ' + str(json.dumps(u"%%s" %% line, ensure_ascii = False).encode('utf8')) + '\\n'
+				message = '%s:  ' + str(json.dumps(u"%%s" %% line, ensure_ascii = False).encode('utf8')) + '\\n' 
 				logger.info(message)
 		except Exception,e:
 			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
