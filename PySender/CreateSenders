@@ -210,11 +210,12 @@ try:
 	#log_file.write(hoy + ' GrayLog connection lost!!!\\n')
 	#log_file.close()
 except Exception,e:
+	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 	print 'bad'
 	sys.exit(1)
-	#log_file = open(LogFile, 'a+')
-	#log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
-	#log_file.close() """ % (parameters['server'], parameters['port'])
+	log_file = open(LogFile, 'a+')
+	log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
+	log_file.close() """ % (parameters['server'], parameters['port'])
 connection_file.write(connection_template)
 connection_file.close()
 current_permissions = os.stat('%s/check_connection' % parameters['file_location'])
@@ -247,7 +248,7 @@ try:
                                         results.append('False')
                                         continue
                         if 'False' in results:
-                                print False
+                                print ' - GrayLog not processing '
                                 sys.exit(1)
                         else:
                                 for i in range(len(servers)):
@@ -259,22 +260,22 @@ try:
                                         	elif (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100 <= 74:
                                                 	journal_capacity.append(\"GOOD\")
 					except Exception as e:
-						print e.message
+						print ' - unable to get journal status - ', e.message
 						sys.exit(1)
                                 if 'BAD' in journal_capacity:
-                                        print False
+                                        print ' - journal capacity = ', (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100
                                         sys.exit(1)
                                 else:
                                         print True
                                         sys.exit(0)
                 except Exception as e:
-                        print e.message
+                        print ' - unable to get response from GrayLog - ', e.message
                         sys.exit(1)
         else:
-                print response.content, ' ', response.status_code
+                print ' - Bad response from GrayLog - ', response.content, ' ', response.status_code
                 sys.exit(1)
 except Exception as e:
-        print e.message
+        print ' - unable to get any response from GrayLog - ', e.message
         sys.exit(1)
 
 """ % (parameters['server'], parameters['lb_port'], parameters['graylog_admin_user'], parameters['graylog_admin_password'], parameters['graylog_admin_user'], parameters['graylog_admin_password'])
@@ -324,6 +325,7 @@ def childProcess():
 		if 'True' in is_up:
 			return True
 		else:
+			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 			log_file = open(LogFile, 'a+')
 			log_file.write(hoy + ' - dead - %%s\\n' %% is_up)
 			log_file.close()
