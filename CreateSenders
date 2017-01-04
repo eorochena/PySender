@@ -65,7 +65,7 @@ if os.path.isdir(LogDir) == False:
 # Logger
 logger = logging.getLogger('PySender')
 logger.setLevel(logging.INFO)
-handler = logging.handlers.SysLogHandler(address = (graylog_server, 1515), socktype=socket.SOCK_STREAM)
+handler = logging.handlers.SysLogHandler(address = (graylog_server, graylog_port), socktype=socket.SOCK_STREAM)
 formatter = logging.Formatter(hostname + ' - %%(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
