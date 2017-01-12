@@ -105,11 +105,11 @@ def logmsg():
                 msg = follow.stdout.readline()
 		try:
 			if len(msg) > 0 and len(content) <= 109186:
-                		if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
-                        		yield content
-                        		content = msg
-                		else:
-                        		content += msg
+                		#if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
+                        	yield content
+                        	content = msg
+                		#else:
+                        	#	content += msg
 			elif len(content) > 109186:
 				hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 				content = '%%s - Too many characters in string\\n' %% hoy
