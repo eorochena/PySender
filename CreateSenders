@@ -328,7 +328,7 @@ def childProcess():
 			return False
 
 	def processes_alive(process_status):
-		process_up = os.popen(\"ps ax|grep %%s|egrep -v 'grep|<defunct>|vim|less|tail'|awk '{print $6}'\" %% process_status).read().replace('\\n', ' ').split()
+		process_up = os.popen(\"ps ax|grep %%s|grep python|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'\" %% process_status).read().replace('\\n', ' ').split()
 		if len(process_up) == 1:
 			if process_status == process_up[0].split('/')[-1]:
 				return True
@@ -395,7 +395,7 @@ def childProcess():
 		elif connection_alive() == True and processes_alive(process_status) == False and GraylogStatus() == True:
 			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         		log_file = open(LogFile, 'a+')
-			log_file.write(\"%%s - Restarting PySender %%s and killing %%s\\n\" %% (hoy, process_status, process_status.replace('PySender_', '')))
+			log_file.write(\"%%s - Restarting %%s and killing it if was running in funky state\\n\" %% (hoy, process_status))
 			log_file.close()
 			subprocess.call(\"ps ax|grep %%s|egrep -v 'grep|defunct'|awk '{print $1}'|xargs kill -9\" %% process_status, stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'tail -F'|grep %%s|grep -v grep|awk '{print $1}'|xargs kill -9\" %% process_status.replace('PySender_', ''), stderr=empty_file, stdout=empty_file, shell=True)
