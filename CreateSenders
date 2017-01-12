@@ -284,6 +284,11 @@ start_template = """#!/usr/bin/python
 
 import subprocess, os, datetime, time, sys, smtplib, socket, random
 
+## Application log
+LogFile = \"/var/log/PySender/FireStart.log\"
+if os.path.isdir('/var/log/PySender') == False:
+	subprocess.call('mkdir /var/log/PySender', shell=True)
+
 def childProcess():
 	senders = %s
 	emptiness = os.devnull
@@ -299,11 +304,7 @@ def childProcess():
 	email_recipient = '%s'
 	email_message = \"Subject: PySender stop sending messages from %%s\\n\\nPySender has stopped sending messages to GrayLog from %%s(%%s)\" %% (hostname, hostname, ip_address) 
 
-	## Application log
-	LogFile = \"/var/log/PySender/FireStart.log\"
 	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-	if os.path.isdir('/var/log/PySender') == False:
-		subprocess.call('mkdir /var/log/PySender', shell=True)
 
 	def connection_alive():
 		is_up = os.popen(\"ps ax|grep check_connection|egrep -v 'grep|defunct'|wc -l\").read()[0]
