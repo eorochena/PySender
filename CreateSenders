@@ -2,16 +2,14 @@
 
 import os, stat, sys, subprocess, linecache
 
-conf_file = open('../sender.conf', 'r')
+conf_file = open('sender.conf', 'r')
 read_it = conf_file.readlines()
 parameters = {}
 apps = []
 
 for i in read_it:
 	if 'file_location' in i and i.find('#') == -1:
-		parameters['file_location'] = i.split('"')[1] + '/PySender-syslog'
-		if os.path.isdir(parameters['file_location']) == False:
-        		subprocess.call('mkdir %s/PySender' % parameters['file_location'], shell=True)
+		parameters['file_location'] = i.split('"')[1]
 for i in read_it:
 	if 'server' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
@@ -37,12 +35,9 @@ for i in read_it:
 			continue
 		elif 'log_file' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == True:
 			parameters['log_file'] = i.split('"')[1]
-		#elif 'log_file' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == False:	
-		#	print parameters['log_file'], " doesn't exists, skipping"
-		#	pass
 
 		sender = open('%s/PySender_%s' % (parameters['file_location'], parameters['application']), 'w')
-		template = """#!/opt/rh/python27/root/usr/bin/python
+		template = """#!/usr/bin/python
 
 import time, logging, logging.handlers, os, sys, subprocess, select, datetime, re, socket, smtplib, json
 
@@ -70,7 +65,7 @@ if os.path.isdir(LogDir) == False:
 # Logger
 logger = logging.getLogger('PySender')
 logger.setLevel(logging.INFO)
-handler = logging.handlers.SysLogHandler(address = (graylog_server, 1515), socktype=socket.SOCK_STREAM)
+handler = logging.handlers.SysLogHandler(address = (graylog_server, graylog_port), socktype=socket.SOCK_STREAM)
 formatter = logging.Formatter(hostname + ' - %%(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -110,11 +105,11 @@ def logmsg():
                 msg = follow.stdout.readline()
 		try:
 			if len(msg) > 0 and len(content) <= 109186:
-                		if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
-                        		yield content
-                        		content = msg
-                		else:
-                        		content += msg
+                		#if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
+                        	yield content
+                        	content = msg
+                		#else:
+                        	#	content += msg
 			elif len(content) > 109186:
 				hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 				content = '%%s - Too many characters in string\\n' %% hoy
@@ -358,6 +353,7 @@ def childProcess():
 		for i in senders:
 			subprocess.Popen('%s/PySender_%%s' %% i, stdout=empty_file, stderr=empty_file, shell = True)
 	elif connection_alive() == False or GraylogStatus() == False:
+        	print '%%s - Tried to establish initial connection on port 1515 and port 12900 but failed - Closing Down :(\\n' %% hoy
 		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         	log_file = open(LogFile, 'a+')
         	log_file.write('%%s - Tried to establish initial connection on port 1515 and port 12900 but failed - Closing Down :(\\n' %% hoy)
@@ -372,15 +368,15 @@ def childProcess():
 	Fail2Connect = 0
 	BadGraylog = 0
 
-	while Fail2Connect < 3 or BadGraylog < 3:
+	while Fail2Connect < 7 or BadGraylog < 7:
 		process_status = 'PySender_' + random.choice(senders)
 		if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True:
 			continue
-		elif connection_alive() == False and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 2:
+		elif connection_alive() == False and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 6:
 			Fail2Connect += 1
 			subprocess.Popen('%s/check_connection', stderr=empty_file, stdout=empty_file, shell=True)
 			time.sleep(1)
-			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 2:
+			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 6:
 				hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         			log_file = open(LogFile, 'a+')
 				log_file.write(\"%%s - is alive %%s\\n\" %% (hoy, process_status))
@@ -388,10 +384,10 @@ def childProcess():
 				Fail2Connect = 0
 			else:
 				Fail2Connect += 1
-		elif connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == False and BadGraylog <= 2:
+		elif connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == False and BadGraylog <= 6:
 			BadGraylog += 1
 			subprocess.Popen('%s/Graylog_Status', shell=True)
-			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and BadGraylog <= 2:
+			if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and BadGraylog <= 6:
 				BadGraylog = 0
 			else:
 				BadGraylog += 1
@@ -413,7 +409,7 @@ def childProcess():
 			else:
 				BadGraylog += 1
 				Fail2Connect += 1
-		elif Fail2Connect >= 3 or BadGraylog >= 3:
+		elif Fail2Connect >= 7 or BadGraylog >= 7:
 			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         		log_file = open(LogFile, 'a+')
 			log_file.write(\"%%s - Unable to connect to GrayLog\\n\" %% hoy)
@@ -421,15 +417,15 @@ def childProcess():
                 	break
 
 	try:
-        	if Fail2Connect >= 3 or BadGraylog >= 3:
+        	if Fail2Connect >= 7 or BadGraylog >= 7:
 			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 			subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
-                	print \"%%s - Tried to restablish connection %%s port 1515 and %%s port 12900 - Closing Down :(\" %% (hoy, Fail2Connect, BadGraylog)
+                	print \"%%s - Tried to restablish connection %%s times on port 1515 and %%s times on port 12900 - Closing Down :(\" %% (hoy, Fail2Connect, BadGraylog)
         		log_file = open(LogFile, 'a+')
-        		log_file.write('%%s - Tried to restablish connection %%s port 1515 and %%s port 12900 - Closing Down :(\\n' %% (hoy, Fail2Connect, BadGraylog))
+        		log_file.write('%%s - Tried to restablish connection %%s times on port 1515 and %%s times on port 12900 - Closing Down :(\\n' %% (hoy, Fail2Connect, BadGraylog))
 			log_file.close()
 			email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
 			email_server.quit()
