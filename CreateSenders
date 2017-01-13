@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os, stat, sys, subprocess, linecache
 
@@ -21,11 +21,6 @@ for i in read_it:
 		parameters['graylog_admin_user'] = i.split('"')[1]
 	elif 'graylog_admin_password' in i and i.find('#') == -1:
 		parameters['graylog_admin_password'] = i.split('"')[1]
-for i in read_it:
-	if 'relayhost' in i and i.find('#') == -1:
-		parameters['relayhost'] = i.split('"')[1]
-	elif 'email_recipient' in i and i.find('#') == -1:
-		parameters['email_recipient'] = i.split('"')[1]
 for i in read_it:
 	try:
 		if 'application' in i and i.find('#') == -1:
@@ -227,6 +222,8 @@ servers = []
 results = []
 journal_capacity = []
 
+LogFile = "/var/log/PySender/FireStart.log"
+
 try:
         response = requests.get('http://%%s:%%s/system/lbstatus' %% (graylog_server, load_balancer_port), timeout = 7, headers={'Connection':'close'})
         if response.content == 'ALIVE':
@@ -261,7 +258,7 @@ try:
                                         print ' - journal capacity = ', (float(journal_status['journal_size'])/float(journal_status['journal_size_limit']))*100
                                         sys.exit(1)
                                 else:
-                                        print True
+                                        print "Alive"
                                         sys.exit(0)
                 except Exception as e:
                         print ' - unable to get response from GrayLog - ', e.message
@@ -284,6 +281,9 @@ start_template = """#!/usr/bin/python
 
 import subprocess, os, datetime, time, sys, smtplib, socket, random
 
+port = %s
+lb_port = %s
+
 ## Application log
 LogFile = \"/var/log/PySender/FireStart.log\"
 if os.path.isdir('/var/log/PySender') == False:
@@ -299,11 +299,6 @@ def childProcess():
 	# Establish initial connection to GrayLog
 	subprocess.Popen('%s/check_connection')
 
-	# Email Settings
-	email_server = smtplib.SMTP('%s')
-	email_recipient = '%s'
-	email_message = \"Subject: PySender stop sending messages from %%s\\n\\nPySender has stopped sending messages to GrayLog from %%s(%%s)\" %% (hostname, hostname, ip_address) 
-
 	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 
 	def connection_alive():
@@ -318,7 +313,7 @@ def childProcess():
 	
 	def GraylogStatus():
 		is_up = os.popen('%s/Graylog_Status').read()
-		if 'True' in is_up:
+		if 'Alive' in is_up:
 			return True
 		else:
 			hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
@@ -354,10 +349,10 @@ def childProcess():
 		for i in senders:
 			subprocess.Popen('%s/PySender_%%s' %% i, stdout=empty_file, stderr=empty_file, shell = True)
 	elif connection_alive() == False or GraylogStatus() == False:
-        	print '%%s - Tried to establish initial connection on port 1515 and port 12900 but failed - Closing Down :(\\n' %% hoy
+        	print '%%s - Tried to establish initial connection on port %%s and port %%s but failed - Closing Down :(\\n' %% (hoy, port, lb_port)
 		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         	log_file = open(LogFile, 'a+')
-        	log_file.write('%%s - Tried to establish initial connection on port 1515 and port 12900 but failed - Closing Down :(\\n' %% hoy)
+        	log_file.write('%%s - Tried to establish initial connection on port %%s and port %%s but failed - Closing Down :(\\n' %% (hoy, port, lb_port))
 		log_file.close()
 		subprocess.call(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 		subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
@@ -428,8 +423,6 @@ def childProcess():
         		log_file = open(LogFile, 'a+')
         		log_file.write('%%s - Tried to restablish connection %%s times on port 1515 and %%s times on port 12900 - Closing Down :(\\n' %% (hoy, Fail2Connect, BadGraylog))
 			log_file.close()
-			email_server.sendmail(\"PySender@%%s\" %% hostname, email_recipient, email_message)
-			email_server.quit()
         		sys.exit(1)
 	except (KeyboardInterrupt, SystemExit):
 		hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
@@ -488,7 +481,7 @@ try:
 except IndexError:
 	print 'Bad'
 	sys.exit(1)
-""" % (apps, parameters['file_location'], parameters['relayhost'], parameters['email_recipient'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'])
+""" % (parameters['port'], parameters['lb_port'], apps, parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'], parameters['file_location'])
 start_file.write(start_template)
 start_file.close()
 current_permissions = os.stat('%s/FireStart' % parameters['file_location'])
