@@ -11,6 +11,19 @@ for i in read_it:
 	if 'file_location' in i and i.find('#') == -1:
 		parameters['file_location'] = i.split('"')[1]
 for i in read_it:
+	if 'ssl_enable' in i and i.find('#') == -1:
+		parameters['ssl_enable'] = i.split('"')[1]
+for i in read_it:
+	if 'ssl_cert' in i and i.find('#') == -1:
+		parameters['ssl_cert'] = i.split('"')[1]
+	elif 'ssl_cert' in i and i.find('#') == 1:
+		parameters['ssl_cert'] = 'None'
+for i in read_it:
+	if 'ssl_key' in i and i.find('#') == -1:
+		parameters['ssl_key'] = i.split('"')[1]
+	elif 'ssl_key' in i and i.find('#') == 1:
+		parameters['ssl_key'] = 'None'
+for i in read_it:
 	if 'server' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
 	elif 'port' in i and i.find('#') == -1:
@@ -32,7 +45,8 @@ for i in read_it:
 			parameters['log_file'] = i.split('"')[1]
 
 		sender = open('%s/PySender_%s' % (parameters['file_location'], parameters['application']), 'w')
-		template = """#!/usr/bin/python
+		if  parameters['ssl_enable'] == 'False':
+			template = """#!/usr/bin/python
 
 import time, logging, logging.handlers, os, sys, subprocess, select, datetime, re, socket, smtplib, json
 
@@ -167,6 +181,147 @@ except Exception,e:
 
 """ % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
 	
+		elif parameters['ssl_enable'] == 'True':
+			template = """#!/usr/bin/python
+
+import time, logging, logging.handlers, os, sys, subprocess, select, datetime, re, socket, smtplib, json
+from syslogssl import SSLSysLogHandler
+
+# GrayLog parameters
+graylog_server = '%s'
+graylog_port = %s
+address = (graylog_server, graylog_port)
+cert = '%s'
+
+socket.setdefaulttimeout(5.0)
+
+# File to read
+filename = '%s'
+
+# Server settings
+ip_address = socket.gethostbyname(socket.gethostname())
+hostname = socket.gethostname()
+
+# Reading file contents
+follow = subprocess.Popen(['tail', '-F', filename], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+
+# Application log
+LogDir = \"/var/log/PySender/\"
+LogFile = \"/var/log/PySender/%s.log\"  
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir(LogDir) == False:
+        subprocess.call('mkdir /var/log/PySender', shell=True)
+
+# Logger
+logger = logging.getLogger('PySender')
+logger.setLevel(logging.INFO)
+handler = SSLSysLogHandler(address = address, certs = cert)
+formatter = logging.Formatter(hostname + ' - %%(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+# Check if tail -F is alive
+def tail_alive():
+        alive = os.popen(\"ps ax|grep 'tail -F %%s'|egrep -v 'grep|defunct'|wc -l\" %% filename).read()[0]
+        if int(alive) == 1:
+                return True
+        elif int(alive) > 1 or int(alive) < 1:
+                log_file = open(LogFile, 'a+')
+                log_file.write(hoy + ' - tail - Bad %%s\\n' %% alive)
+                log_file.close()
+                return False
+
+# Check if FireStart is alive and well
+def firestart():
+        fire_alive = os.popen(\"ps ax|grep FireStart|egrep -v 'grep|log|defunct'|awk '{print $6}'\").read().replace('\\n', ' ').split()
+	if len(fire_alive) >= 1:
+                if fire_alive[0].split('/')[-1] == 'FireStart':
+                        return True
+                else:
+                        log_file = open(LogFile, 'a+')
+                        log_file.write(hoy + ' - FireStart is really dead - %%s\\n' %% fire_alive[0].split('/')[-1])
+                        log_file.close()
+                        return False
+        elif len(fire_alive) < 1:
+                log_file = open(LogFile, 'a+')
+                log_file.write(hoy + ' - FireStart is dead - %%s\\n' %% fire_alive)
+                log_file.close()
+                return False
+
+# Dealing with multiline log messages
+def logmsg():
+        content = ''
+        while True:
+                msg = follow.stdout.readline()
+                try:
+                        if len(msg) > 0 and len(content) <= 109186:
+                                #if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
+                                yield content
+                                content = msg
+                                #else:
+                                #       content += msg
+                        elif len(content) > 109186:
+                                hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+                                content = '%%s - Too many characters in string\\n' %% hoy
+                                continue
+                        else:
+                                break
+                except Exception,e:
+                        hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+                        log_file = open(LogFile, 'a+')
+                        log_file.write(hoy + ' - logmsg failed - ' + str(e) + '\\n')
+                        log_file.close()
+                        continue
+        if len(content) > 0:
+                yield content
+
+
+while True:
+        if tail_alive() == True and firestart() == True:
+                try:
+			for line in logmsg():
+                                message = '%s:  ' + str(json.dumps('%%s' %% line).decode('latin-1')) + '\\n' 
+                                logger.info(message)
+                except Exception,e:
+                        hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+                        log_file = open(LogFile, 'a+')
+                        log_file.write(hoy + ' - send failed - ' + str(e) + '\\n')
+                        log_file.close()
+                        continue
+        elif tail_alive() == False and firestart() == True:
+                follow = subprocess.Popen(['tail','-F',filename],stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                continue
+        elif tail_alive() == True and firestart() == False:
+                break
+        elif tail_alive() == False and firestart() == False:
+                break
+        
+try:
+        if firestart() == False:
+                os.popen(\"ps ax|grep 'tail -F %s'|grep -v grep|awk '{print $1}'|xargs kill -9\")
+                os.popen(\"ps ax|grep 'tail -F %s|grep -v SYS'|grep -v 'grep tail'|awk '{print $1}'|xargs kill -9\")
+                os.popen(\"ps ax|grep check_connection|awk '{print $1}'|xargs kill -9\")
+                log_file = open(LogFile, 'a+')
+                log_file.write(hoy + \" - Closed application due to FireStart not running\\n\")
+                log_file.close()
+                sys.exit(1)     
+except (KeyboardInterrupt, SystemExit):
+        os.popen(\"ps ax|grep 'tail -F %s'|grep -v grep|awk '{print $1}'|xargs kill -9\")
+        os.popen(\"ps ax|grep 'tail -F %s|grep -v SYS'|grep -v 'grep tail'|awk '{print $1}'|xargs kill -9\")
+        #log_file = open(LogFile, 'a+')
+        #log_file.write(hoy + \" - Closed by SystemExit\\n\")
+        #log_file.close()
+        sys.exit(1)
+except Exception,e:
+        os.popen(\"ps ax|grep 'tail -F %s'|grep -v grep|awk '{print $1}'|xargs kill -9\")
+        os.popen(\"ps ax|grep 'tail -F %s|grep -v SYS'|grep -v 'grep tail'|awk '{print $1}'|xargs kill -9\")
+        #log_file = open(LogFile, 'a+')
+        #log_file.write(hoy + ' - other - ' + str(e) + '\\n')
+        #log_file.close()
+        sys.exit(1)
+
+""" % (parameters['server'], parameters['port'], parameters['ssl_cert'], parameters['log_file'], parameters['application'], parameters['application'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
+                                                                                                                                                      			
 		sender.write(template)
 		sender.close()	
 		current_permissions = os.stat('%s/PySender_%s' % (parameters['file_location'], parameters['application']))
@@ -174,10 +329,12 @@ except Exception,e:
 	except:
 		pass
 
-connection_file = open('%s/check_connection' % parameters['file_location'], 'w')	
-connection_template = """#!/usr/bin/python
+connection_file = open('%s/check_connection' % parameters['file_location'], 'w')
 
-import socket, datetime, os, sys, subprocess
+if parameters['ssl_enable'] == 'False':	
+	connection_template = """#!/usr/bin/python
+
+import socket, datetime, os, sys, subprocess, ssl
 
 graylog_server = '%s'
 port = %s
@@ -195,10 +352,9 @@ try:
 	check_it.send('connected to GrayLog')
 	packet = check_it.recv(1024)
 	check_it.close()
-	print 'bad'
-	#log_file = open(LogFile, 'a+')
-	#log_file.write(hoy + ' GrayLog connection lost!!!\\n')
-	#log_file.close()
+	log_file = open(LogFile, 'a+')
+	log_file.write(hoy + ' GrayLog connection lost - %%s\\n' %% str(e))
+	log_file.close()
 except Exception,e:
 	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 	print 'bad'
@@ -206,10 +362,46 @@ except Exception,e:
 	log_file = open(LogFile, 'a+')
 	log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
 	log_file.close() """ % (parameters['server'], parameters['port'])
+
+elif parameters['ssl_enable'] == 'True':
+	connection_template = """#!/usr/bin/python
+
+import socket, datetime, os, sys, subprocess, ssl
+
+graylog_server = '%s'
+port = %s
+certs = '%s'
+
+# Application log
+LogDir = \"/var/log/PySender/\"
+LogFile = \"/var/log/PySender/check_connection.log\"  
+hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+if os.path.isdir(LogDir) == False:
+        subprocess.call('mkdir /var/log/PySender', shell=True)
+
+try:
+        check_it = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	ssl_connection = ssl.wrap_socket(check_it, ca_certs = certs, cert_reqs = ssl.CERT_REQUIRED)
+        ssl_connection.connect((graylog_server, port))
+        ssl_connection.send('connected to GrayLog')
+        packet = check_it.recv(1024)
+        ssl_connection.close()
+        log_file = open(LogFile, 'a+')
+        log_file.write(hoy + ' GrayLog connection lost - %%s\\n' %% str(e))
+        log_file.close()
+except Exception,e:
+        hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
+        print 'bad'
+        sys.exit(1)
+        log_file = open(LogFile, 'a+')
+        log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
+        log_file.close() """ % (parameters['server'], parameters['port'], parameters['ssl_cert'])
+
 connection_file.write(connection_template)
 connection_file.close()
 current_permissions = os.stat('%s/check_connection' % parameters['file_location'])
 os.chmod('%s/check_connection' % parameters['file_location'], current_permissions.st_mode | stat.S_IEXEC)
+
 
 Graylog_Status = open('%s/Graylog_Status' % parameters['file_location'], 'w')
 Graylog_template = """#!/usr/bin/python
