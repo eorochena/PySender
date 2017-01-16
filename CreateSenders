@@ -16,13 +16,13 @@ for i in read_it:
 for i in read_it:
 	if 'ssl_cert' in i and i.find('#') == -1:
 		parameters['ssl_cert'] = i.split('"')[1]
-	else:
-		parameters['ssl_cert'] == 'None'
+	elif 'ssl_cert' in i and i.find('#') == 1:
+		parameters['ssl_cert'] = 'None'
 for i in read_it:
 	if 'ssl_key' in i and i.find('#') == -1:
-		parameters['ssl_key'] == i.split('"')[1]
-	else:
-		parameters['ssl_key'] == 'None'
+		parameters['ssl_key'] = i.split('"')[1]
+	elif 'ssl_key' in i and i.find('#') == 1:
+		parameters['ssl_key'] = 'None'
 for i in read_it:
 	if 'server' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
@@ -45,7 +45,7 @@ for i in read_it:
 			parameters['log_file'] = i.split('"')[1]
 
 		sender = open('%s/PySender_%s' % (parameters['file_location'], parameters['application']), 'w')
-		if  parameters['ssl_enable'] == False:
+		if  parameters['ssl_enable'] == 'False':
 			template = """#!/usr/bin/python
 
 import time, logging, logging.handlers, os, sys, subprocess, select, datetime, re, socket, smtplib, json
@@ -181,7 +181,7 @@ except Exception,e:
 
 """ % (parameters['server'], parameters['port'], parameters['log_file'], parameters['application'], parameters['application'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'], parameters['log_file'])
 	
-		elif parameters['ssl_enable'] == True:
+		elif parameters['ssl_enable'] == 'True':
 			template = """#!/usr/bin/python
 
 import time, logging, logging.handlers, os, sys, subprocess, select, datetime, re, socket, smtplib, json
@@ -215,7 +215,7 @@ if os.path.isdir(LogDir) == False:
 # Logger
 logger = logging.getLogger('PySender')
 logger.setLevel(logging.INFO)
-handler = SSLSysLogHandler(address = address, certs = certs)
+handler = SSLSysLogHandler(address = address, certs = cert)
 formatter = logging.Formatter(hostname + ' - %%(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -331,10 +331,10 @@ except Exception,e:
 
 connection_file = open('%s/check_connection' % parameters['file_location'], 'w')
 
-if parameters['ssl_enable'] == False:	
+if parameters['ssl_enable'] == 'False':	
 	connection_template = """#!/usr/bin/python
 
-import socket, datetime, os, sys, subprocess
+import socket, datetime, os, sys, subprocess, ssl
 
 graylog_server = '%s'
 port = %s
@@ -352,10 +352,9 @@ try:
 	check_it.send('connected to GrayLog')
 	packet = check_it.recv(1024)
 	check_it.close()
-	print 'bad'
-	#log_file = open(LogFile, 'a+')
-	#log_file.write(hoy + ' GrayLog connection lost!!!\\n')
-	#log_file.close()
+	log_file = open(LogFile, 'a+')
+	log_file.write(hoy + ' GrayLog connection lost - %%s\\n' %% str(e))
+	log_file.close()
 except Exception,e:
 	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
 	print 'bad'
@@ -364,10 +363,10 @@ except Exception,e:
 	log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
 	log_file.close() """ % (parameters['server'], parameters['port'])
 
-	elif parameters['ssl_enable'] == True:
-		connection_template = """#!/usr/bin/python
+elif parameters['ssl_enable'] == 'True':
+	connection_template = """#!/usr/bin/python
 
-import socket, datetime, os, sys, subprocess
+import socket, datetime, os, sys, subprocess, ssl
 
 graylog_server = '%s'
 port = %s
@@ -387,10 +386,9 @@ try:
         ssl_connection.send('connected to GrayLog')
         packet = check_it.recv(1024)
         ssl_connection.close()
-        print 'bad'
-        #log_file = open(LogFile, 'a+')
-        #log_file.write(hoy + ' GrayLog connection lost!!!\\n')
-        #log_file.close()
+        log_file = open(LogFile, 'a+')
+        log_file.write(hoy + ' GrayLog connection lost - %%s\\n' %% str(e))
+        log_file.close()
 except Exception,e:
         hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
         print 'bad'
@@ -399,11 +397,11 @@ except Exception,e:
         log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
         log_file.close() """ % (parameters['server'], parameters['port'], parameters['ssl_cert'])
 
-
 connection_file.write(connection_template)
 connection_file.close()
 current_permissions = os.stat('%s/check_connection' % parameters['file_location'])
 os.chmod('%s/check_connection' % parameters['file_location'], current_permissions.st_mode | stat.S_IEXEC)
+
 
 Graylog_Status = open('%s/Graylog_Status' % parameters['file_location'], 'w')
 Graylog_template = """#!/usr/bin/python
