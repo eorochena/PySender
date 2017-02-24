@@ -24,7 +24,7 @@ for i in read_it:
 	elif 'ssl_key' in i and i.find('#') == 1:
 		parameters['ssl_key'] = 'None'
 for i in read_it:
-	if 'server' in i and i.find('#') == -1:
+	if 'server=' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
 	elif 'port' in i and i.find('#') == -1:
 		parameters['port'] = i.split('"')[1]
@@ -357,11 +357,11 @@ try:
 	log_file.close()
 except Exception,e:
 	hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-	print 'bad'
-	sys.exit(1)
 	log_file = open(LogFile, 'a+')
 	log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
-	log_file.close() """ % (parameters['server'], parameters['port'])
+	log_file.close() 
+	sys.exit(1)
+	""" % (parameters['server'], parameters['port'])
 
 elif parameters['ssl_enable'] == 'True':
 	connection_template = """#!/usr/bin/python
@@ -391,11 +391,11 @@ try:
         log_file.close()
 except Exception,e:
         hoy = datetime.datetime.strftime(datetime.datetime.now(), '%%Y-%%m-%%d %%H:%%M:%%S')
-        print 'bad'
-        sys.exit(1)
         log_file = open(LogFile, 'a+')
         log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(e) + '\\n')
-        log_file.close() """ % (parameters['server'], parameters['port'], parameters['ssl_cert'])
+        log_file.close() 
+        sys.exit(1)
+	""" % (parameters['server'], parameters['port'], parameters['ssl_cert'])
 
 connection_file.write(connection_template)
 connection_file.close()
@@ -611,9 +611,9 @@ def childProcess():
 			subprocess.call(\"ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
 			subprocess.call(\"ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9\", stderr=empty_file, stdout=empty_file, shell=True)
-                	print \"%%s - Tried to restablish connection %%s times on port 1515 and %%s times on port 12900 - Closing Down :(\" %% (hoy, Fail2Connect, BadGraylog)
+                	print \"%%s - Tried to restablish connection %%s times on port %%s and %%s times on port %%s - Closing Down :(\" %% (hoy, Fail2Connect, port, BadGraylog, lb_port)
         		log_file = open(LogFile, 'a+')
-        		log_file.write('%%s - Tried to restablish connection %%s times on port 1515 and %%s times on port 12900 - Closing Down :(\\n' %% (hoy, Fail2Connect, BadGraylog))
+        		log_file.write('%%s - Tried to restablish connection %%s times on port %%s and %%s times on port %%s - Closing Down :(\\n' %% (hoy, Fail2Connect, port, BadGraylog, lb_port))
 			log_file.close()
         		sys.exit(1)
 	except (KeyboardInterrupt, SystemExit):
