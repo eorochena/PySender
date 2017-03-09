@@ -8,40 +8,40 @@ parameters = {}
 apps = []
 
 for i in read_it:
-	if 'file_location' in i and i.find('#') == -1:
+	if 'file_location=' in i and i.find('#') == -1:
 		parameters['file_location'] = i.split('"')[1]
 for i in read_it:
-	if 'ssl_enable' in i and i.find('#') == -1:
+	if 'ssl_enable=' in i and i.find('#') == -1:
 		parameters['ssl_enable'] = i.split('"')[1]
 for i in read_it:
-	if 'ssl_cert' in i and i.find('#') == -1:
+	if 'ssl_cert=' in i and i.find('#') == -1:
 		parameters['ssl_cert'] = i.split('"')[1]
-	elif 'ssl_cert' in i and i.find('#') == 1:
+	elif 'ssl_cert=' in i and i.find('#') == 1:
 		parameters['ssl_cert'] = 'None'
 for i in read_it:
-	if 'ssl_key' in i and i.find('#') == -1:
+	if 'ssl_key=' in i and i.find('#') == -1:
 		parameters['ssl_key'] = i.split('"')[1]
-	elif 'ssl_key' in i and i.find('#') == 1:
+	elif 'ssl_key=' in i and i.find('#') == 1:
 		parameters['ssl_key'] = 'None'
 for i in read_it:
 	if 'server=' in i and i.find('#') == -1:
 		parameters['server'] = i.split('"')[1]
-	elif 'port' in i and i.find('#') == -1:
+	elif 'port=' in i and i.find('#') == -1:
 		parameters['port'] = i.split('"')[1]
-	elif 'load_balancer' in i and i.find('#') == -1:
+	elif 'load_balancer=' in i and i.find('#') == -1:
 		parameters['lb_port'] = i.split('"')[1]
-	elif 'graylog_admin_user' in i and i.find('#') == -1:
+	elif 'graylog_admin_user=' in i and i.find('#') == -1:
 		parameters['graylog_admin_user'] = i.split('"')[1]
-	elif 'graylog_admin_password' in i and i.find('#') == -1:
+	elif 'graylog_admin_password=' in i and i.find('#') == -1:
 		parameters['graylog_admin_password'] = i.split('"')[1]
 for i in read_it:
 	try:
-		if 'application' in i and i.find('#') == -1:
+		if 'application=' in i and i.find('#') == -1:
 			parameters['application'] = i.split('"')[1]
 			print parameters['application']
 			apps.append(parameters['application'])
 			continue
-		elif 'log_file' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == True:
+		elif 'log_file=' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == True:
 			parameters['log_file'] = i.split('"')[1]
 
 		sender = open('%s/PySender_%s' % (parameters['file_location'], parameters['application']), 'w')
