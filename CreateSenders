@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import os, stat, sys, subprocess, linecache
+import os
+import stat
 
 conf_file = open('sender.conf', 'r')
 read_it = conf_file.readlines()
