@@ -111,7 +111,7 @@ def run_while(filename, app):
             log_it.write(today_date + ' - restarting tail_it')
             log_it.close()
             continue
-        elif tail_alive(filename, app) and firestart_status(app):
+        elif tail_alive(filename, app) and not firestart_status(app):
             break
         elif not tail_alive(filename, app) and not firestart_status(app):
             break
