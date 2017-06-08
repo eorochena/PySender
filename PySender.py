@@ -36,7 +36,7 @@ def log_file(app):
     return logging_file
 
 def tail_alive(filename, app):
-    alive = os.popen('pgrep -f \'tail -F %s\'|wc -l' % filename).read()[0]
+    alive = os.popen('pgrep -f \'tail -F %s\'|wc -l' % filename).read()
     if int(alive) == 2:
         return True
     elif int(alive) > 2 or int(alive) < 2:
