@@ -54,7 +54,7 @@ def firestart_status(app):
             log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - FireStart process is not running - %s\n' % fire_alive)
             log_it.close()
-            return False
+            return True
     elif not fire_alive:
         log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - FireStart process is not running - %s\n' % fire_alive)
@@ -119,8 +119,6 @@ def run_wild(filename, app):
 for i in files_to_read:
     filename = files_to_read[i]
     app = i
-    print(filename)
-    print(app)
     threading_wild = threading.Thread(target=run_wild(filename, app), args=(filename, app))
     threading_wild.daemon = True
     threading_wild.start()
