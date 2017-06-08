@@ -75,5 +75,7 @@ def logs_to_read():
             elif 'log_file=' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == True:
                 parameters['log_file'] = i.split('"')[1]
             apps_log[parameters['application']] = parameters['log_file']
+        except:
+            pass
     return apps_log
 
