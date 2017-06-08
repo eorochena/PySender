@@ -127,6 +127,8 @@ for i in files_to_read:
 
 start = queue.get()
 
+print start
+
 
 
 print(graylog_server, graylog_port, files_to_read, ip_address, hostname, today_date)
