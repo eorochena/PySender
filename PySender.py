@@ -32,8 +32,8 @@ logger.addHandler(handler)
 def log_file(app):
     if not os.path.isdir(pysender_logdir):
         os.mkdir('/var/log/pysender')
-        logging_file = pysender_logdir + app
-        return logging_file
+    logging_file = pysender_logdir + '/' + app
+    return logging_file
 
 def tail_alive(filename, app):
     alive = os.popen('pgrep -f \'tail -F %s\'|wc -l' % filename).read()[0]
@@ -51,12 +51,12 @@ def firestart_status(app):
         if fire_alive[0].split('/')[-1]  == 'FireStart':
             return True
         else:
-            log_it = open(log_file(app), '+a')
+            log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - FireStart process is not running - %s\n' % fire_alive)
             log_it.close()
             return False
     elif not fire_alive:
-        log_it = open(log_file(app), '+a')
+        log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - FireStart process is not running - %s\n' % fire_alive)
         log_it.close()
         return False
@@ -78,7 +78,9 @@ def logmsg(filename, app):
                     content += msg
             elif len(content) > 109186:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-                content = '%s - Too many characters in message string\n' % today_date
+                log_it = open(log_file(app), 'a+')
+                log_it.write('%s - Too many characters in message string\n' % today_date)
+                log_it.close()
                 continue
             else:
                 break
@@ -115,7 +117,11 @@ def run_wild(filename, app):
     queue.put(run_while(filename, app))
 
 for i in files_to_read:
-    threading_wild = threading.Thread(target=run_wild(files_to_read[i], i), args=(files_to_read[i], i))
+    filename = files_to_read[i]
+    app = i
+    print(filename)
+    print(app)
+    threading_wild = threading.Thread(target=run_wild(filename, app), args=(filename, app))
     threading_wild.daemon = True
     threading_wild.start()
 
