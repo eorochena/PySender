@@ -109,7 +109,7 @@ def run_while(filename, app):
             continue
         elif tail_alive(filename, app) and firestart_status(app):
             break
-        elif not tail_alive(filename, app) and not firestart_status():
+        elif not tail_alive(filename, app) and not firestart_status(app):
             break
 
 queue = Queue.Queue()
