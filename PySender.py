@@ -101,11 +101,15 @@ def run_while(filename, app):
                     logger.info(message)
             except Exception,e:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-                log_it = open(log_file(app), '+a')
+                log_it = open(log_file(app), 'a+')
                 log_it.write(today_date + ' - unable to send message to GrayLog - ' + str(e) + '\n')
                 log_it.close()
         elif not tail_alive(filename, app) and firestart_status(app):
             tail_it(filename)
+            today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+            log_it = open(log_file(app), 'a+')
+            log_it.write(today_date + ' - restarting tail_it')
+            log_it.close()
             continue
         elif tail_alive(filename, app) and firestart_status(app):
             break
