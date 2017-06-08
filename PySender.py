@@ -71,11 +71,11 @@ def logmsg(filename, app):
         msg = tail_it(filename).stdout.readline()
         try:
             if len(msg) > 0 and len(content) <= 109186:
-                if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
-                    yield content
-                    content = msg
-                else:
-                    content += msg
+                #if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
+                yield content
+                content = msg
+                #else:
+                 #   content += msg
             elif len(content) > 109186:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 log_it = open(log_file(app), 'a+')
