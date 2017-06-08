@@ -41,7 +41,7 @@ def tail_alive(filename, app):
         return True
     elif int(alive) > 2 or int(alive) < 2:
         log_it = open(log_file(app), 'a+')
-        log_it.write(today_date + ' - tail process appears not to be runnning properly - %s\n' % alive)
+        log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' % (alive, filename))
         log_it.close()
         return False
 
