@@ -94,7 +94,7 @@ def logmsg(filename, app):
 
 def run_while(filename, app):
     while True:
-        if tail_it(filename) and firestart_status(app):
+        if tail_alive(filename, app) and firestart_status(app):
             try:
                 for line in logmsg(filename, app):
                     message = app + ' ' + str(json.dumps('%s' % line)) + '\n'
