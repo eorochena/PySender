@@ -36,7 +36,7 @@ def log_file(app):
     return logging_file
 
 def tail_alive(filename, app):
-    alive = os.popen('ps ax|grep \'tail -F %s\'|egrep -v \'grep|defunct\'' % filename).read()[0]
+    alive = os.popen('ps ax|grep \'tail -F %s\'|egrep -v \'grep|defunct\'' % filename).read()
     if filename in alive:
         return True
     elif filename not in alive:
