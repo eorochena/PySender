@@ -62,7 +62,6 @@ def firestart_status(app):
         log_it.close()
         return False
 
-tail_it = subprocess.Popen(['tail', '-F', filename], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 
 def logmsg(filename, app):
     content = ''
@@ -121,6 +120,7 @@ def run_wild(filename, app):
 
 for i in files_to_read:
     filename = files_to_read[i]
+    tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     app = i
     threading_wild = threading.Thread(target=run_wild(filename, app), args=(filename, app))
     threading_wild.daemon = True
