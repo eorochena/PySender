@@ -73,6 +73,7 @@ def processes_alive():
         return False
 
 if connection_alive() == True and GraylogStatus() == True:
+    print('%s/PySender.py' % sender.file_location())
     subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell = True)
 elif connection_alive() == False or GraylogStatus() == False:
     today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
