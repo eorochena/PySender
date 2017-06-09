@@ -91,7 +91,7 @@ BadGraylog = 0
 
 while Fail2Connect < 7 or BadGraylog < 7:
     if connection_alive() == True and processes_alive() == True and GraylogStatus() == True:
-        continue
+        pass
     elif connection_alive() == False and processes_alive() == True and GraylogStatus() == True and Fail2Connect <= 6:
         Fail2Connect += 1
         subprocess.Popen('%s/check_connection' % sender.file_location(),
