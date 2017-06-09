@@ -45,7 +45,7 @@ def GraylogStatus():
         log_it.close()
         return False
 
-def processes_alive(process_status):
+def processes_alive():
     process_up = os.popen("ps ax|grep %s|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'"
                           % process_status).read().replace('\n', ' ').split()
     process_up_result = os.popen(
