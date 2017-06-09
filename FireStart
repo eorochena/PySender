@@ -48,25 +48,14 @@ def GraylogStatus():
 def processes_alive():
     process_up = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start.pid
                           ).read().replace('\n', ' ').split()
+    process_result = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start.pid
+                          ).read()
     if len(process_up) == 1:
-        if 'PySender.py' == process_up[0].split('/')[-1]:
-            return True
-        else:
-            today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-            log_it = open(logging_file, 'a+')
-            log_it.write(today_date + ' - dead - %s\n' % process_up)
-            log_it.close()
-            return False
-    elif len(process_up) > 1:
+        return True
+    elif len(process_up) > 1 or len(process_up) < 1:
         today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
         log_it = open(logging_file, 'a+')
-        log_it.write(today_date + ' - dead - %s \n' % process_up)
-        log_it.close()
-        return False
-    elif len(process_up) < 1:
-        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        log_it = open(logging_file, 'a+')
-        log_it.write(today_date + ' - dead - %s \n' % process_up)
+        log_it.write(today_date + ' - dead - %s - %s\n' % (process_up, process_result))
         log_it.close()
         return False
 
