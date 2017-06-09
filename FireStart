@@ -49,7 +49,7 @@ def processes_alive():
     process_up = os.popen("ps ax|grep PySender.py|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'"
                           ).read().replace('\n', ' ').split()
     process_up_result = os.popen(
-        "ps ax|grep %s|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'" % process_status).read()
+        "ps ax|grep PySender.py|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'").read()
     if len(process_up) == 1:
         if process_status == process_up[0].split('/')[-1]:
             return True
