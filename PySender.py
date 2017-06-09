@@ -36,10 +36,10 @@ def log_file(app):
     return logging_file
 
 def tail_alive(filename, app):
-    alive = os.popen('ps ax|grep \'tail -F %s\'|egrep -v \'grep|defunct\'' % filename).read()
-    if filename in alive:
+    alive = os.popen('ps ax|grep \'tail -F %s\'|egrep -v \'grep|defunct\'|wc -l' % filename).read()[0]
+    if int(alive) == 1:
         return True
-    elif filename not in alive:
+    elif int(alive) > 1 or int(alive) < 1:
         log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' % (alive, filename))
         log_it.close()
@@ -108,7 +108,7 @@ def run_while(filename, app):
             tail_it(filename)
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             log_it = open(log_file(app), 'a+')
-            log_it.write(today_date + ' - restarting tail_it')
+            log_it.write(today_date + ' - restarting tail_it\n')
             log_it.close()
             continue
         elif tail_alive(filename, app) and not firestart_status(app):
