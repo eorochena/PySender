@@ -43,7 +43,7 @@ def tail_alive(filename, app):
         log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' % (alive, filename))
         log_it.close()
-        return True
+        return False
 
 def firestart_status(app):
     fire_alive = os.popen('ps ax|grep FireStart|egrep -v \'grep|log|defunct\'|awk \'{print $6}\'').read().rsplit()
@@ -128,8 +128,6 @@ for i in files_to_read:
     threading_wild.start()
 
 start = queue.get()
-
-print start
 
 
 
