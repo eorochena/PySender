@@ -47,19 +47,19 @@ def tail_alive(filename, app):
 
 def firestart_status(app):
     fire_alive = os.popen('ps ax|grep FireStart|egrep -v \'grep|log|defunct\'|awk \'{print $6}\'').read().rsplit()
-    if not fire_alive:
+    if fire_alive:
         if fire_alive[0].split('/')[-1]  == 'FireStart':
             return True
         else:
             log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - FireStart process is not running - %s\n' % fire_alive)
             log_it.close()
-            return True
-    elif fire_alive:
+            return False
+    elif not fire_alive:
         log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - FireStart process is not running - %s\n' % fire_alive)
         log_it.close()
-        return True
+        return False
 
 def tail_it(filename):
     tail_f = subprocess.Popen(['tail', '-F', filename], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
