@@ -99,10 +99,10 @@ while Fail2Connect < 7 or BadGraylog < 7:
         else:
             BadGraylog += 1
     elif connection_alive() == True and processes_alive(process_status) == False and GraylogStatus() == True:
-        hoy = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        log_file = open(LogFile, 'a+')
-        log_file.write("%s - Restarting %s and killing it if was running in funky state\n" % (hoy, process_status))
-        log_file.close()
+        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        log_it = open(logging_file, 'a+')
+        log_it.write("%s - Restarting %s and killing it if was running in funky state\n" % (today_date, process_status))
+        log_it.close()
         subprocess.call("ps ax|grep %s|egrep -v 'grep|defunct'|awk '{print $1}'|xargs kill -9" % process_status, stderr=empty_file, stdout=empty_file, shell=True)
         subprocess.call("ps ax|grep 'tail -F'|grep %s|grep -v grep|awk '{print $1}'|xargs kill -9" % process_status.replace('PySender_', ''), stderr=empty_file, stdout=empty_file, shell=True)
         subprocess.Popen('/home/eorochena/GitHub/PySender/' + process_status, stdout=empty_file, stderr=empty_file, shell=True)
