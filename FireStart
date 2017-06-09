@@ -51,7 +51,7 @@ def processes_alive():
     process_up_result = os.popen(
         "ps ax|grep PySender.py|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'").read()
     if len(process_up) == 1:
-        if process_status == process_up[0].split('/')[-1]:
+        if 'PySender.py' == process_up[0].split('/')[-1]:
             return True
         else:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
