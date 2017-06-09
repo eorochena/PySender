@@ -46,7 +46,8 @@ def GraylogStatus():
         return False
 
 def processes_alive(process_status):
-    process_up = os.popen("ps ax|grep PySender.py|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'|wc -l" ).read().replace('\n', ' ').split()
+    process_up = os.popen("ps ax|grep %s|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'"
+                          % process_status).read().replace('\n', ' ').split()
     process_up_result = os.popen(
         "ps ax|grep %s|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'" % process_status).read()
     if len(process_up) == 1:
@@ -75,14 +76,20 @@ if connection_alive() == True and GraylogStatus() == True:
     subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell = True)
 elif connection_alive() == False or GraylogStatus() == False:
     today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-    print('%s - Tried to establish initial connection on port %s and port %s but failed - Closing Down :(\n' % (today_date, graylog_input_port, graylog_lb_port))
+    print('%s - Tried to establish initial connection on port %s and port %s but failed - Closing Down '
+          ':(\n' % (today_date, graylog_input_port, graylog_lb_port))
     log_it = open(logging_file, 'a+')
-    log_it.write('%s - Tried to establish initial connection on port %s and port %s but failed - Closing Down :(\n' % (today_date, graylog_input_port, graylog_lb_port))
+    log_it.write('%s - Tried to establish initial connection on port %s and port %s but failed - Closing Down '
+                 ':(\n' % (today_date, graylog_input_port, graylog_lb_port))
     log_it.close()
-    subprocess.call("ps ax|grep check_connection|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-    subprocess.call("ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-    subprocess.call("ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-    subprocess.call("ps ax|grep 'Graylog_Status'|grep -v grep|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep check_connection|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep 'Graylog_Status'|grep -v grep|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
     sys.exit(1)
 
 
@@ -90,39 +97,41 @@ Fail2Connect = 0
 BadGraylog = 0
 
 while Fail2Connect < 7 or BadGraylog < 7:
-    process_status = '%s/PySender.py' % sender.file_location()
-    if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True:
+    if connection_alive() == True and processes_alive() == True and GraylogStatus() == True:
         continue
-    elif connection_alive() == False and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 6:
+    elif connection_alive() == False and processes_alive() == True and GraylogStatus() == True and Fail2Connect <= 6:
         Fail2Connect += 1
-        subprocess.Popen('/home/eorochena/GitHub/PySender/check_connection', stderr=empty_file, stdout=empty_file, shell=True)
+        subprocess.Popen('%s/check_connection' % sender.file_location(),
+                         stderr=empty_file, stdout=empty_file, shell=True)
         time.sleep(1)
-        if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and Fail2Connect <= 6:
-            hoy = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        if connection_alive() == True and processes_alive() == True and GraylogStatus() == True and Fail2Connect <= 6:
+            today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             log_it = open(LogFile, 'a+')
-            log_it.write("%s - is alive %s\n" % (hoy, process_status))
+            log_it.write("%s - is alive \n" % today_date)
             log_it.close()
             Fail2Connect = 0
         else:
             Fail2Connect += 1
-    elif connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == False and BadGraylog <= 6:
+    elif connection_alive() == True and processes_alive() == True and GraylogStatus() == False and BadGraylog <= 6:
         BadGraylog += 1
         subprocess.Popen('%s/Graylog_Status' % sender.file_location(), shell=True)
-        if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and BadGraylog <= 6:
+        if connection_alive() == True and processes_alive() == True and GraylogStatus() == True and BadGraylog <= 6:
             BadGraylog = 0
         else:
             BadGraylog += 1
-    elif connection_alive() == True and processes_alive(process_status) == False and GraylogStatus() == True:
+    elif connection_alive() == True and processes_alive() == False and GraylogStatus() == True:
         today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
         log_it = open(logging_file, 'a+')
-        log_it.write("%s - Restarting %s and killing it if was running in funky state\n" % (today_date, process_status))
+        log_it.write("%s - Restarting and killing it if was running in funky state\n" % today_date)
         log_it.close()
-        subprocess.call("ps ax|grep %s|egrep -v 'grep|defunct'|awk '{print $1}'|xargs kill -9" % process_status, stderr=empty_file, stdout=empty_file, shell=True)
-        subprocess.call("ps ax|grep 'tail -F'|grep %s|grep -v grep|awk '{print $1}'|xargs kill -9" % process_status.replace('PySender_', ''), stderr=empty_file, stdout=empty_file, shell=True)
-        subprocess.Popen('/home/eorochena/GitHub/PySender/' + process_status, stdout=empty_file, stderr=empty_file, shell=True)
-    elif connection_alive() == False and processes_alive(process_status) == False and GraylogStatus() == False:
-        subprocess.Popen('/home/eorochena/GitHub/PySender/check_connection')
-        subprocess.Popen('/home/eorochena/GitHub/PySender/Graylog_Status')
+        subprocess.call("ps ax|grep PySender.py|egrep -v 'grep|defunct'|awk '{print $1}'|xargs kill -9",
+                        stderr=empty_file, stdout=empty_file, shell=True)
+        subprocess.call("ps ax|grep 'tail -F'|grep PySender.py|grep -v grep|awk '{print $1}'|xargs kill -9"
+                        , stderr=empty_file, stdout=empty_file, shell=True)
+        subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell=True)
+    elif connection_alive() == False and processes_alive() == False and GraylogStatus() == False:
+        subprocess.Popen('/%s/check_connection' % sender.file_location())
+        subprocess.Popen('/%s/Graylog_Status' % sender.file_location())
         time.sleep(3)
         if connection_alive() == True and GraylogStatus() == True:
             Fail2Connect = 0
@@ -131,30 +140,40 @@ while Fail2Connect < 7 or BadGraylog < 7:
             BadGraylog += 1
             Fail2Connect += 1
     elif Fail2Connect >= 7 or BadGraylog >= 7:
-        hoy = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        log_file = open(LogFile, 'a+')
-        log_file.write("%s - Unable to connect to GrayLog\n" % hoy)
-        log_file.close()
+        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        log_it = open(logging_file, 'a+')
+        log_it.write("%s - Unable to connect to GrayLog\n" % today_date)
+        log_it.close()
         break
 
 try:
     if Fail2Connect >= 7 or BadGraylog >= 7:
-        hoy = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        subprocess.call("ps ax|grep check_connection|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-        subprocess.call("ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-        subprocess.call("ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-        subprocess.call("ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-        print "%s - Tried to restablish connection %s times on port %s and %s times on port %s - Closing Down :(" % (hoy, Fail2Connect, port, BadGraylog, lb_port)
-        log_file = open(LogFile, 'a+')
-        log_file.write('%s - Tried to restablish connection %s times on port %s and %s times on port %s - Closing Down :(\n' % (hoy, Fail2Connect, port, BadGraylog, lb_port))
-        log_file.close()
+        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        subprocess.call("ps ax|grep check_connection|awk '{print $1}'|xargs kill -9",
+                        stderr=empty_file, stdout=empty_file, shell=True)
+        subprocess.call("ps ax|grep PySender_|grep -v grep|awk '{print $1}'|xargs kill -9",
+                        stderr=empty_file, stdout=empty_file, shell=True)
+        subprocess.call("ps ax|grep 'tail -F'|grep -v grep|awk '{print $1}'|xargs kill -9",
+                        stderr=empty_file, stdout=empty_file, shell=True)
+        subprocess.call("ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9",
+                        stderr=empty_file, stdout=empty_file, shell=True)
+        print "%s - Tried to restablish connection %s times on port %s and %s times on port %s - Closing Down :("\
+              % (today_date, Fail2Connect, graylog_input_port, BadGraylog, graylog_lb_port)
+        log_it = open(logging_file, 'a+')
+        log_it.write('%s - Tried to restablish connection %s times on port %s and %s times on port %s - Closing Down '
+                     ':(\n' % (today_date, Fail2Connect, graylog_input_port, BadGraylog, graylog_lb_port))
+        log_it.close()
         sys.exit(1)
 except Exception,e:
     hoy = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-    subprocess.call("ps ax|grep check_connection|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-    subprocess.call("ps ax|grep PySender_|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-    subprocess.call("ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
-    subprocess.call("ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9", stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep check_connection|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep PySender_|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep 'tail -F'|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
+    subprocess.call("ps ax|grep 'GraylogStatus'|grep -v grep|awk '{print $1}'|xargs kill -9",
+                    stderr=empty_file, stdout=empty_file, shell=True)
     log_file = open(LogFile, 'a+')
     log_file.write(hoy + ' - other - ' + str(e) + '\n')
     log_file.close()
