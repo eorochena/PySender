@@ -46,10 +46,10 @@ def GraylogStatus():
         return False
 
 def processes_alive():
-    process_up = os.popen("ps ax|grep PySender.py|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'"
+    process_up = os.popen("ps ax|grep PySender.py|grep python|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'"
                           ).read().replace('\n', ' ').split()
     process_up_result = os.popen(
-        "ps ax|grep PySender.py|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'").read()
+        "ps ax|grep PySender.py|grep python|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'").read()
     if len(process_up) == 1:
         if 'PySender.py' == process_up[0].split('/')[-1]:
             return True
