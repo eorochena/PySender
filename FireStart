@@ -47,14 +47,28 @@ def GraylogStatus():
 
 def processes_alive(process_status):
     process_up = os.popen("ps ax|grep %s|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'" % process_status).read().replace('\n', ' ').split()
+    process_up_result = os.popen(
+        "ps ax|grep %s|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'" % process_status).read()
     if len(process_up) == 1:
         if process_status == process_up[0].split('/')[-1]:
             return True
         else:
+            today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+            log_it = open(logging_file, 'a+')
+            log_it.write(today_date + ' - dead - %s - %s\n' % (process_up, process_up_result))
+            log_it.close()
             return False
     elif len(process_up) > 1:
+        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        log_it = open(logging_file, 'a+')
+        log_it.write(today_date + ' - dead - %s - %s\n' % (process_up, process_up_result))
+        log_it.close()
         return False
     elif len(process_up) < 1:
+        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        log_it = open(logging_file, 'a+')
+        log_it.write(today_date + ' - dead - %s - %s\n' % (process_up, process_up_result))
+        log_it.close()
         return False
 
 if connection_alive() == True and GraylogStatus() == True:
