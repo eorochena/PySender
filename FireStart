@@ -22,7 +22,7 @@ ip_address = socket.gethostbyname(socket.gethostname())
 hostname = socket.gethostname()
 
 # Establish initial connection to GrayLog
-subprocess.Popen('/home/eorochena/GitHub/PySender/check_connection')
+subprocess.Popen('%s/check_connection' % sender.file_location())
 
 
 def connection_alive():
