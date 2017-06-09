@@ -46,9 +46,9 @@ def GraylogStatus():
         return False
 
 def processes_alive():
-    process_up = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start.pid
+    process_up = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start().pid
                           ).read().replace('\n', ' ').split()
-    process_result = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start.pid
+    process_result = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start().pid
                           ).read()
     if len(process_up) == 1:
         return True
@@ -59,9 +59,14 @@ def processes_alive():
         log_it.close()
         return False
 
+
+def start():
+    start = subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file,
+                             shell=True)
+    return start
+
 if connection_alive() == True and GraylogStatus() == True:
-    start = subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell = True)
-    start.pid
+    start()
 elif connection_alive() == False or GraylogStatus() == False:
     today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
     print('%s - Tried to establish initial connection on port %s and port %s but failed - Closing Down '
