@@ -36,7 +36,7 @@ def log_file(app):
     return logging_file
 
 def tail_alive(filename, app):
-    alive = os.popen('pgrep -f \'tail -F %s\'|wc -l' % filename).read()[0]
+    alive = os.popen('ps ax|grep \'tail -F %s\'|egrep -v \'grep|defunct\'|wc -l' % filename).read()[0]
     if int(alive) == 2:
         return True
     elif int(alive) > 2 or int(alive) < 2:
@@ -46,7 +46,7 @@ def tail_alive(filename, app):
         return True
 
 def firestart_status(app):
-    fire_alive = os.popen('pgrep FireStart').read().rsplit()
+    fire_alive = os.popen('ps ax|grep FireStart|egrep -v \'grep|log|defunct\'|awk \'{print $6}\'').read().rsplit()
     if fire_alive:
         if fire_alive[0].split('/')[-1]  == 'FireStart':
             return True
