@@ -124,11 +124,11 @@ while Fail2Connect < 7 or BadGraylog < 7:
         log_it = open(logging_file, 'a+')
         log_it.write("%s - Restarting and killing it if was running in funky state\n" % today_date)
         log_it.close()
-        subprocess.call("ps ax|grep PySender.py|egrep -v 'grep|defunct'|awk '{print $1}'|xargs kill -9",
-                        stderr=empty_file, stdout=empty_file, shell=True)
-        subprocess.call("ps ax|grep 'tail -F'|grep PySender.py|grep -v grep|awk '{print $1}'|xargs kill -9"
-                        , stderr=empty_file, stdout=empty_file, shell=True)
-        subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell=True)
+        #subprocess.call("ps ax|grep PySender.py|egrep -v 'grep|defunct'|awk '{print $1}'|xargs kill -9",
+         #               stderr=empty_file, stdout=empty_file, shell=True)
+        #subprocess.call("ps ax|grep 'tail -F'|grep PySender.py|grep -v grep|awk '{print $1}'|xargs kill -9"
+         #               , stderr=empty_file, stdout=empty_file, shell=True)
+        #subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell=True)
     elif connection_alive() == False and processes_alive() == False and GraylogStatus() == False:
         subprocess.Popen('/%s/check_connection' % sender.file_location())
         subprocess.Popen('/%s/Graylog_Status' % sender.file_location())
