@@ -35,7 +35,7 @@ def connection_alive():
         return False
 
 def GraylogStatus():
-    is_up = os.popen('/home/eorochena/GitHub/PySender/Graylog_Status').read()
+    is_up = os.popen('%s/Graylog_Status' % sender.file_location()).read()
     if 'Alive' in is_up:
         return True
     else:
@@ -46,7 +46,7 @@ def GraylogStatus():
         return False
 
 def processes_alive(process_status):
-    process_up = os.popen("ps ax|grep %s|grep python|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'" % process_status).read().replace('\n', ' ').split()
+    process_up = os.popen("ps ax|grep %s|egrep -v 'grep|<defunct>|vim|less|tail|ps'|awk '{print $6}'" % process_status).read().replace('\n', ' ').split()
     if len(process_up) == 1:
         if process_status == process_up[0].split('/')[-1]:
             return True
@@ -93,7 +93,7 @@ while Fail2Connect < 7 or BadGraylog < 7:
             Fail2Connect += 1
     elif connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == False and BadGraylog <= 6:
         BadGraylog += 1
-        subprocess.Popen('/home/eorochena/GitHub/PySender/Graylog_Status', shell=True)
+        subprocess.Popen('%s/Graylog_Status' % sender.file_location(), shell=True)
         if connection_alive() == True and processes_alive(process_status) == True and GraylogStatus() == True and BadGraylog <= 6:
             BadGraylog = 0
         else:
