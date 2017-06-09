@@ -12,7 +12,7 @@ graylog_input_port = int(sender.graylog_input_port())
 graylog_lb_port = int(sender.load_balancer_port())
 
 ## Application log
-logging_file = "/var/log/PySender/FireStart.log"
+logging_file = "/var/log/pysender/firestart.log"
 if os.path.isdir('/var/log/pysender') == False:
     subprocess.call('mkdir /var/log/pysender', shell=True)
 
