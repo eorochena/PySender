@@ -43,7 +43,7 @@ def tail_alive(filename, app):
         log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' % (alive, filename))
         log_it.close()
-        return False
+        return True
 
 def firestart_status(app):
     fire_alive = os.popen('pgrep FireStart').read().rsplit()
