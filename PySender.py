@@ -36,10 +36,10 @@ def log_file(app):
     return logging_file
 
 def tail_alive(filename, app):
-    alive = os.popen('ps ax|grep \'tail -F %s\'|egrep -v \'grep|defunct\'|wc -l' % filename).read()[0]
-    if int(alive) == 2:
+    alive = os.popen('ps ax|grep \'tail -F %s\'|egrep -v \'grep|defunct\'' % filename).read()[0]
+    if filename in alive:
         return True
-    elif int(alive) > 2 or int(alive) < 2:
+    elif filename not in alive:
         log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' % (alive, filename))
         log_it.close()
