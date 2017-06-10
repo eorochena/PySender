@@ -7,7 +7,6 @@ import datetime
 import socket
 import json
 import sender
-import Queue
 import threading
 
 graylog_server = sender.graylog_server()
@@ -59,7 +58,7 @@ def firestart_status(app):
         return False
 
 
-def logmsg(filename, app):
+def logmsg(app):
     content = ''
     while True:
         msg = tail_it.stdout.readline()
@@ -90,7 +89,7 @@ def run_while(filename, app):
     while True:
         if tail_alive(filename, app) and firestart_status(app):
             try:
-                for line in logmsg(filename, app):
+                for line in logmsg(app):
                     message = app + ' ' + str(json.dumps('%s' % line)) + '\n'
                     logger.info(message)
             except Exception,e:
@@ -109,10 +108,6 @@ def run_while(filename, app):
             break
         elif not tail_alive(filename, app) and not firestart_status(app):
             break
-
-queue = Queue.Queue()
-def run_wild(filename, app):
-    queue.put(run_while(filename, app))
 
 thread_names = {}
 x = 0
