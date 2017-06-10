@@ -3,9 +3,10 @@
 import requests
 import sys
 import json
+import sender
 
-graylog_server = '10.239.227.56'
-load_balancer_port = 12900
+graylog_server = sender.graylog_server()
+load_balancer_port = sender.load_balancer_port()
 servers = []
 results = []
 journal_capacity = []
