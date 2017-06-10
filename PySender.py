@@ -1,13 +1,9 @@
 #!/usr/bin/python
 
-import time
-import logging
 import logging.handlers
 import os
-import sys
 import subprocess
 import datetime
-import re
 import socket
 import json
 import sender
@@ -122,11 +118,11 @@ for i in files_to_read:
     filename = files_to_read[i]
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     app = i
-    threading_wild = threading.Thread(target=run_wild(filename, app), args=(filename, app))
+    threading_wild = threading.Thread(target=run_while(filename, app), args=(filename, app))
     threading_wild.daemon = True
     threading_wild.start()
 
-start = queue.get()
+#start = queue.get()
 
 
 
