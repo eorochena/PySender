@@ -114,18 +114,20 @@ queue = Queue.Queue()
 def run_wild(filename, app):
     queue.put(run_while(filename, app))
 
-for i in files_to_read:
-    filename = files_to_read[i]
+thread_names = {}
+
+for application in files_to_read:
+    filename = files_to_read[application]
+    app = application
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    app = i
-    threading_wild = threading.Thread(target=run_while(filename, app), args=(filename, app))
-    threading_wild.daemon = True
-    threading_wild.start()
+    thread_names[application] = threading.Thread(target=run_while(filename, app))
+    thread_names.daemon = True
+    thread_names.start()
 
 #start = queue.get()
 
+while True:
+    pass
 
-
-print(graylog_server, graylog_port, files_to_read, ip_address, hostname, today_date)
 
 
