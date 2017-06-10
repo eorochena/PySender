@@ -6,7 +6,7 @@ import json
 import sender
 
 graylog_server = sender.graylog_server()
-load_balancer_port = sender.load_balancer_port()
+load_balancer_port = int(sender.load_balancer_port())
 servers = []
 results = []
 journal_capacity = []

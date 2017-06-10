@@ -8,7 +8,7 @@ import subprocess
 import sender
 
 graylog_server = sender.graylog_server()
-port = sender.graylog_input_port()
+port = int(sender.graylog_input_port())
 
 # Application log
 LogDir = "/var/log/pysender/"
