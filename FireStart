@@ -34,7 +34,7 @@ def check_input():
 def connection_alive():
     pid = check_input().pid
     is_up = os.popen("ps ax|grep check_connection|grep -w %s|grep -v grep|wc -l"
-                     % pid.read().rsplit()[0]
+                     % pid).read().rsplit()[0]
     if int(is_up) == 1:
         print(is_up)
         return True
