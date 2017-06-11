@@ -124,7 +124,8 @@ for application in files_to_read:
     print(thread_names[application])
     thread_names[application].daemon = True
     thread_names[application].start()
-print('out')
+for i in thread_names:
+    print(i)
 start = wild_queue.get()
 print(start)
 
