@@ -121,13 +121,11 @@ for application in files_to_read:
     app = application
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     thread_names[application] = threading.Thread(target=run_wild(filename, app))
-    print(thread_names[application])
     thread_names[application].daemon = True
     thread_names[application].start()
 for i in thread_names:
     print(i)
 start = wild_queue.get()
-print(start)
 
 
 
