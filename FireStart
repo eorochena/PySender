@@ -73,6 +73,9 @@ def start():
                              shell=True)
     return start
 
+pid = check_input().pid
+pysender_pid = start().pid
+
 if connection_alive() == True and GraylogStatus() == True:
     start()
 elif connection_alive() == False or GraylogStatus() == False:
@@ -94,8 +97,6 @@ elif connection_alive() == False or GraylogStatus() == False:
     sys.exit(1)
 
 
-pid = check_input().pid
-pysender_pid = start().pid
 Fail2Connect = 0
 BadGraylog = 0
 
