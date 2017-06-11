@@ -23,6 +23,9 @@ hostname = socket.gethostname()
 
 # Establish initial connection to GrayLog
 def check_input():
+    log_it = open(logging_file, 'a+')
+    log_it.write('started')
+    log_it.close()
     input_status = subprocess.Popen('%s/check_connection' % sender.file_location())
     return input_status
 
