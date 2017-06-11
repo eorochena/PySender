@@ -105,8 +105,7 @@ while Fail2Connect < 7 or BadGraylog < 7:
         log_it = open(logging_file, 'a+')
         log_it.write('connection alive - False')
         log_it.close()
-        subprocess.Popen('%s/check_connection' % sender.file_location(),
-                         stderr=empty_file, stdout=empty_file, shell=True)
+        check_input()
         time.sleep(1)
         if connection_alive() == True and processes_alive() == True and GraylogStatus() == True and Fail2Connect <= 6:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
@@ -138,7 +137,7 @@ while Fail2Connect < 7 or BadGraylog < 7:
         #subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell=True)
     elif connection_alive() == False and processes_alive() == False and GraylogStatus() == False:
         print('bad 4')
-        subprocess.Popen('/%s/check_connection' % sender.file_location())
+        check_input()
         subprocess.Popen('/%s/Graylog_Status' % sender.file_location())
         time.sleep(3)
         if connection_alive() == True and GraylogStatus() == True:
