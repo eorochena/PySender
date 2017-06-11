@@ -119,8 +119,6 @@ for application in files_to_read:
     thread_names[application] = threading.Thread(target=run_while(filename, app))
     thread_names[application].setDaemon(True)
     thread_names[application].start()
-    while True:
-        pass
 
 
 
