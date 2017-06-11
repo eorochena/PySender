@@ -26,7 +26,8 @@ def check_input():
     log_it = open(logging_file, 'a+')
     log_it.write('started')
     log_it.close()
-    input_status = subprocess.Popen('%s/check_connection' % sender.file_location())
+    input_status = subprocess.Popen('%s/check_connection' % sender.file_location(),
+                                    stdout=empty_file, stderr=empty_file, shell=True)
     return input_status
 
 
