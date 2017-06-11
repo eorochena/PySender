@@ -122,9 +122,8 @@ for application in files_to_read:
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     thread_names[application] = threading.Thread(target=run_wild(filename, app))
     thread_names[application].daemon = True
-for i in thread_names:
-    thread_names[i].start()
-    print(i)
+thread_names[syslog].start()
+thread_names[auth].start()
 #start = wild_queue.get()
 
 
