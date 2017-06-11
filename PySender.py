@@ -124,7 +124,7 @@ for application in files_to_read:
     thread_names[application] = threading.Thread(target=run_wild(filename, app))
     thread_names[application].daemon = True
     thread_names[application].start()
-
+print('out')
 start = wild_queue.get()
 
 
