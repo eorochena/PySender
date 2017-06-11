@@ -154,6 +154,9 @@ while Fail2Connect < 7 or BadGraylog < 7:
         log_it.write("%s - Unable to connect to GrayLog\n" % today_date)
         log_it.close()
         break
+    else:
+        print('bad 6')
+        break
 
 try:
     if Fail2Connect >= 7 or BadGraylog >= 7:
