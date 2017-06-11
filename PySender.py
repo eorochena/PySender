@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import Queue
 import logging.handlers
 import os
 import subprocess
@@ -109,6 +109,11 @@ def run_while(filename, app):
         elif not tail_alive(filename, app) and not firestart_status(app):
             break
 
+wild_queue = Queue.Queue
+
+def run_wild(filename, app):
+    wild_queue.put(run_while(filename, app))
+
 thread_names = {}
 x = 0
 for application in files_to_read:
@@ -116,8 +121,8 @@ for application in files_to_read:
     filename = files_to_read[application]
     app = application
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    thread_names[application] = threading.Thread(target=run_while(filename, app))
-    thread_names[application].setDaemon(True)
+    thread_names[application] = threading.Thread(target=run_wild(filename, app))
+    thread_names[application].daemon = True
     thread_names[application].start()
 
 
