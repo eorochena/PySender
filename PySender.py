@@ -123,7 +123,6 @@ for application in files_to_read:
     thread_names[application] = threading.Thread(target=run_wild(filename, app))
     thread_names[application].daemon = True
 thread_names[auth].start()
-thread_names[syslog].start()
 #start = wild_queue.get()
 
 
