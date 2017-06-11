@@ -30,7 +30,6 @@ def check_input():
                                     stdout=empty_file, stderr=empty_file, shell=True)
     return input_status
 
-pid = check_input().pid
 
 def connection_alive():
     is_up = os.popen("ps ax|grep check_connection|grep -w %s|grep -v grep|wc -l"
@@ -55,9 +54,9 @@ def GraylogStatus():
         return False
 
 def processes_alive():
-    process_up = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start().pid
+    process_up = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % pysender_pid
                           ).read().replace('\n', ' ').split()
-    process_result = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % start().pid
+    process_result = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % pysender_pid
                           ).read()
     if len(process_up) == 1:
         return True
@@ -95,6 +94,8 @@ elif connection_alive() == False or GraylogStatus() == False:
     sys.exit(1)
 
 
+pid = check_input().pid
+pysender_pid = start().pid
 Fail2Connect = 0
 BadGraylog = 0
 
