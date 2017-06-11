@@ -22,11 +22,13 @@ ip_address = socket.gethostbyname(socket.gethostname())
 hostname = socket.gethostname()
 
 # Establish initial connection to GrayLog
-subprocess.Popen('%s/check_connection' % sender.file_location())
+def check_input():
+    input_status = subprocess.Popen('%s/check_connection' % sender.file_location())
+    return input_status
 
 
 def connection_alive():
-    is_up = os.popen("ps ax|grep check_connection|egrep -v 'grep|defunct'|wc -l").read()[0]
+    is_up = os.popen("ps ax|grep check_connection|grep %s|grep -v grep|wc -l" % check_input().pid).read()[0]
     if int(is_up) == 1:
         return True
     elif int(is_up) < 1 or int(is_up) > 1:
@@ -91,7 +93,8 @@ BadGraylog = 0
 
 while Fail2Connect < 7 or BadGraylog < 7:
     if connection_alive() == True and processes_alive() == True and GraylogStatus() == True:
-        pass
+        continue
+        print('good')
     elif connection_alive() == False and processes_alive() == True and GraylogStatus() == True and Fail2Connect <= 6:
         Fail2Connect += 1
         today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
