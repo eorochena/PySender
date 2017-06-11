@@ -126,6 +126,7 @@ for application in files_to_read:
     thread_names[application].start()
 print('out')
 start = wild_queue.get()
+print(start)
 
 
 
