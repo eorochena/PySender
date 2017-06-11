@@ -109,7 +109,7 @@ def run_while(filename, app):
         elif not tail_alive(filename, app) and not firestart_status(app):
             break
 
-wild_queue = Queue.Queue
+wild_queue = Queue.Queue()
 
 def run_wild(filename, app):
     wild_queue.put(run_while(filename, app))
@@ -124,6 +124,8 @@ for application in files_to_read:
     thread_names[application] = threading.Thread(target=run_wild(filename, app))
     thread_names[application].daemon = True
     thread_names[application].start()
+
+start = wild_queue.get()
 
 
 
