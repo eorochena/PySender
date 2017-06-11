@@ -30,9 +30,9 @@ def check_input():
                                     stdout=empty_file, stderr=empty_file, shell=True)
     return input_status
 
+pid = check_input().pid
 
 def connection_alive():
-    pid = check_input().pid
     is_up = os.popen("ps ax|grep check_connection|grep -w %s|grep -v grep|wc -l"
                      % pid).read().rsplit()[0]
     if int(is_up) == 1:
