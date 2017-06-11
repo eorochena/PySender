@@ -34,7 +34,7 @@ def tail_it(filename):
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return tail_it
 
-tail_pid = tail_it().pid
+tail_pid = tail_it(filename).pid
 
 def tail_alive(filename, app):
     alive = os.popen('ps ax|grep "tail -F %s"|grep -w "%s"|grep -v grep|wc -l' % (filename, tail_pid)).read()[0]
@@ -66,7 +66,7 @@ def firestart_status(app):
 def logmsg(app):
     content = ''
     while True:
-        msg = tail_it().stdout.readline()
+        msg = tail_it(filename).stdout.readline()
         try:
             if len(msg) > 0 and len(content) <= 109186:
                 #if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
@@ -103,7 +103,7 @@ def run_while(filename, app):
                 log_it.write(today_date + ' - unable to send message to GrayLog - ' + str(e) + '\n')
                 log_it.close()
         elif not tail_alive(filename, app) and firestart_status(app):
-            tail_it()
+            tail_it(filename)
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - restarting tail_it\n')
