@@ -119,9 +119,9 @@ x = 0
 for application in files_to_read:
     filename = files_to_read[application]
     app = application
-    print(thread_names[application])
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     thread_names[application] = threading.Thread(target=run_wild(filename, app))
+    print(thread_names[application])
     thread_names[application].daemon = True
     thread_names[application].start()
 print('out')
