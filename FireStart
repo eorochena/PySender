@@ -101,12 +101,9 @@ Fail2Connect = 0
 BadGraylog = 0
 
 while Fail2Connect < 7 or BadGraylog < 7:
-    print('loop')
     if connection_alive() == True and processes_alive() == True and GraylogStatus() == True:
-        print('good')
         continue
     elif connection_alive() == False and processes_alive() == True and GraylogStatus() == True and Fail2Connect <= 6:
-        print('bad 1')
         Fail2Connect += 1
         today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
         log_it = open(logging_file, 'a+')
@@ -121,18 +118,15 @@ while Fail2Connect < 7 or BadGraylog < 7:
             log_it.close()
             Fail2Connect = 0
         else:
-            print('bad 1 - 2')
             Fail2Connect += 1
     elif connection_alive() == True and processes_alive() == True and GraylogStatus() == False and BadGraylog <= 6:
         BadGraylog += 1
-        print('bad 2')
         subprocess.Popen('%s/Graylog_Status' % sender.file_location(), shell=True)
         if connection_alive() == True and processes_alive() == True and GraylogStatus() == True and BadGraylog <= 6:
             BadGraylog = 0
         else:
             BadGraylog += 1
     elif connection_alive() == True and processes_alive() == False and GraylogStatus() == True:
-        print('bad 3')
         today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
         log_it = open(logging_file, 'a+')
         log_it.write("%s - Restarting and killing it if was running in funky state\n" % today_date)
@@ -143,7 +137,6 @@ while Fail2Connect < 7 or BadGraylog < 7:
          #               , stderr=empty_file, stdout=empty_file, shell=True)
         #subprocess.Popen('%s/PySender.py' % sender.file_location(), stdout=empty_file, stderr=empty_file, shell=True)
     elif connection_alive() == False and processes_alive() == False and GraylogStatus() == False:
-        print('bad 4')
         check_input()
         subprocess.Popen('/%s/Graylog_Status' % sender.file_location())
         time.sleep(3)
@@ -154,14 +147,12 @@ while Fail2Connect < 7 or BadGraylog < 7:
             BadGraylog += 1
             Fail2Connect += 1
     elif Fail2Connect >= 7 or BadGraylog >= 7:
-        print('bad 5')
         today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
         log_it = open(logging_file, 'a+')
         log_it.write("%s - Unable to connect to GrayLog\n" % today_date)
         log_it.close()
         break
     else:
-        print('bad 6')
         break
 
 try:

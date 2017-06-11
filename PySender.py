@@ -117,8 +117,8 @@ def run_wild(filename, app):
 thread_names = {}
 x = 0
 for application in files_to_read:
-    #print(application)
     filename = files_to_read[application]
+    print(filename)
     app = application
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     thread_names[application] = threading.Thread(target=run_wild(filename, app))
