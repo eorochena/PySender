@@ -96,8 +96,8 @@ BadGraylog = 0
 while Fail2Connect < 7 or BadGraylog < 7:
     print('loop')
     if connection_alive() == True and processes_alive() == True and GraylogStatus() == True:
-        continue
         print('good')
+        continue
     elif connection_alive() == False and processes_alive() == True and GraylogStatus() == True and Fail2Connect <= 6:
         print('bad 1')
         Fail2Connect += 1
