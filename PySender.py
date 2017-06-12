@@ -30,14 +30,16 @@ def log_file(app):
     logging_file = pysender_logdir + '/' + app
     return logging_file
 
-def tail_it():
+def tail_it(filename):
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return tail_it
 
-tail_pid = tail_it().pid
+def tail_pid(filename):
+    the_pid = tail_it(filename).pid
+    return the_pid
 
 def tail_alive(filename, app):
-    alive = os.popen('ps ax|grep "tail -F %s"|grep -w "%s"|grep -v grep|wc -l' % (filename, tail_pid)).read()[0]
+    alive = os.popen('ps ax|grep "tail -F %s"|grep -w "%s"|grep -v grep|wc -l' % (filename, tail_pid(filename)).read()[0]
     if int(alive) >= 1:
         return True
     elif int(alive) < 1:
