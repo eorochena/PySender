@@ -42,7 +42,7 @@ def tail_alive(filename, app):
     alive = os.popen('ps ax|grep "tail -F %s"|grep -w "%s"|grep -v grep|wc -l' %
                      (filename, tail_pid(filename))).read()[0]
     if int(alive) >= 1:
-        log_it = open(log_file(), 'a+')
+        log_it = open(log_file(app), 'a+')
         log_it.write(today_date + ' - pid %s' % tail_pid(filename))
         return True
     elif int(alive) < 1:
