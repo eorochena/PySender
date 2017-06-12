@@ -25,7 +25,7 @@ hostname = socket.gethostname()
 def check_input():
     today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
     log_it = open(logging_file, 'a+')
-    log_it.write('started\n')
+    log_it.write(today_date, ' - started\n')
     log_it.close()
     input_status = subprocess.Popen('%s/check_connection' % sender.file_location(),
                                     stdout=empty_file, stderr=empty_file, shell=True)
