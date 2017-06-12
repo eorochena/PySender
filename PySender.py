@@ -123,9 +123,10 @@ x = 0
 for application in files_to_read:
     filename = files_to_read[application]
     app = application
-    thread_names[application] = threading.Thread(target=run_wild(filename, app))
-    thread_names[application].daemon = True
-thread_names[auth].start()
+    thread_names[app] = threading.Thread(target=run_wild(filename, app))
+    thread_names[app].daemon = True
+for i in thread_names:
+    print(i)
 #start = wild_queue.get()
 
 
