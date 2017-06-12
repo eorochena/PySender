@@ -43,7 +43,7 @@ def tail_alive(filename, app):
                      (filename, tail_pid(filename))).read()[0]
     if int(alive) >= 1:
         log_it = open(log_file(app), 'a+')
-        log_it.write(today_date + ' - pid %s' % tail_pid(filename))
+        log_it.write(today_date + ' - pid %s\n' % tail_pid(filename))
         return True
     elif int(alive) < 1:
         log_it = open(log_file(app), 'a+')
