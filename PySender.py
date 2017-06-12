@@ -39,7 +39,8 @@ def tail_pid(filename):
     return the_pid
 
 def tail_alive(filename, app):
-    alive = os.popen('ps ax|grep "tail -F %s"|grep -w "%s"|grep -v grep|wc -l' % (filename, tail_pid(filename)).read()[0]
+    alive = os.popen('ps ax|grep "tail -F %s"|grep -w "%s"|grep -v grep|wc -l' %
+                     (filename, tail_pid(filename))).read()[0]
     if int(alive) >= 1:
         return True
     elif int(alive) < 1:
