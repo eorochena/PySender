@@ -130,7 +130,7 @@ for application in files_to_read:
     thread_names[app] = threading.Thread(target=run_wild(filename, app))
     thread_names[app].daemon = True
     thread_names[app].start()
-    start = wild_queue.get()
+wild_queue.get()
 
 
 
