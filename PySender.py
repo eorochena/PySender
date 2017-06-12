@@ -69,7 +69,7 @@ def firestart_status(app):
 def logmsg(app):
     content = ''
     while True:
-        msg = tail_it().stdout.readline()
+        msg = tail_it(filename).stdout.readline()
         try:
             if len(msg) > 0 and len(content) <= 109186:
                 #if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
