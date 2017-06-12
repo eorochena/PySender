@@ -25,7 +25,7 @@ hostname = socket.gethostname()
 def check_input():
     today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
     log_it = open(logging_file, 'a+')
-    log_it.write(today_date, ' - started\n')
+    log_it.write(today_date + ' - started\n')
     log_it.close()
     input_status = subprocess.Popen('%s/check_connection' % sender.file_location(),
                                     stdout=empty_file, stderr=empty_file, shell=True)
@@ -43,6 +43,7 @@ def connection_alive():
     else:
         return False
 
+
 def GraylogStatus():
     is_up = os.popen('%s/Graylog_Status' % sender.file_location()).read()
     if 'Alive' in is_up:
@@ -53,6 +54,7 @@ def GraylogStatus():
         log_it.write(today_date + ' - dead - %s\n' % is_up)
         log_it.close()
         return False
+
 
 def processes_alive():
     process_up = os.popen('ps ax|grep "PySender"|grep -w "%s"|grep -v grep|wc -l' % pysender_pid
