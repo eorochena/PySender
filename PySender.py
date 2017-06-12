@@ -34,9 +34,8 @@ def tail_it(filename):
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return tail_it
 
-tail_pid = tail_it(filename).pid
-
 def tail_alive(filename, app):
+    tail_pid = tail_it(filename).pid
     alive = os.popen('ps ax|grep "tail -F %s"|grep -w "%s"|grep -v grep|wc -l' % (filename, tail_pid)).read()[0]
     if int(alive) >= 1:
         return True
