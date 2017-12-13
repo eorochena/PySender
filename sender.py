@@ -35,6 +35,11 @@ def graylog_server():
             parameters['server'] = i.split('"')[1]
     return parameters['server']
 
+def monitor_port():
+    for i in read_it:
+        if 'monitor=' in i and i.find('#') == -1:
+            parameters['monitor_port'] = i.split('"')[1]
+    return parameters['monitor_port']
 
 def graylog_input_port():
     for i in read_it:
@@ -70,7 +75,6 @@ def logs_to_read():
         try:
             if 'application=' in i and i.find('#') == -1:
                 parameters['application'] = i.split('"')[1]
-                print parameters['application']
                 continue
             elif 'log_file=' in i and i.find('#') == -1 and os.path.isfile(i.split('"')[1]) == True:
                 parameters['log_file'] = i.split('"')[1]
