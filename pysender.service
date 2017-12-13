@@ -1,0 +1,10 @@
+[Unit]
+Description=log exporter for Graylog
+
+[Service]
+Type=simple
+WorkingDirectory=/home/eorochena/GitHub/PySender
+ExecStart=/home/eorochena/GitHub/PySender/firestart.py
+
+[Install]
+WantedBy=multi-user.target
