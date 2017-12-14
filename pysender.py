@@ -29,7 +29,7 @@ def pysender(filename, app, firestart_pid):
     def log_file(app):
         if not os.path.isdir(pysender_logdir):
             os.mkdir('/var/log/pysender')
-        logging_file = pysender_logdir + '/pysender.log'
+        logging_file = pysender_logdir + '/pysender-%s.log' % app
         return logging_file
 
 
@@ -102,13 +102,11 @@ def pysender(filename, app, firestart_pid):
     while True:
         if tail_alive(filename, app) and firestart_status(app, firestart_pid) \
                 and check_connection.status() and graylog_status.graylog_state():
-            print(check_connection.status())
             sender = socket.socket()
             sender.connect_ex((graylog_server, graylog_port))
             try:
                 for line in logmsg(app):
                     message = app + ' ' + str(json.dumps('%s' % line)) + '\n'
-                    print(message)
                     sender.sendall((message).encode('utf-8'))
                     #logger.info(message)
             except Exception as error:
@@ -131,14 +129,16 @@ def pysender(filename, app, firestart_pid):
             sys.exit(1)
         elif tail_alive(filename, app) and firestart_status(app, firestart_pid) \
             and check_connection.status() == False and graylog_status.graylog_state():
-            print(check_connection.status())
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - Unable to send log messages to Graylog, Graylog Input is not processing '
                                       'incoming messages check /var/log/pysender/check_connection.log, '
                                       'retrying every 10 seconds\n')
             log_it.close()
-            sender.close()
+            try:
+                sender.close()
+            except:
+                pass
             time.sleep(10)
             continue
         elif tail_alive(filename, app) and firestart_status(app, firestart_pid) and check_connection.status() \
@@ -148,7 +148,6 @@ def pysender(filename, app, firestart_pid):
             log_it.write(today_date + ' - Not sending messages to Graylog, incoming messages check '
                                       '/var/log/pysender/graylog_status.log, retrying every 10 seconds\n')
             log_it.close()
-            sender.close()
             time.sleep(10)
             continue
         elif tail_alive(filename, app) == False and firestart_status(app, firestart_pid) == False \

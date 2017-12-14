@@ -10,6 +10,7 @@ import sender
 import subprocess
 import check_connection
 import sys
+import datetime
 
 files_to_read = sender.logs_to_read()
 graylog_input_port = sender.graylog_input_port()
@@ -65,8 +66,14 @@ def start_pysender():
 
 while True:
     if check_connection.status() and graylog_status.graylog_state():
-        logging.info('Started application')
+        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        log_it = open(logging_file, 'a+')
+        log_it.write(today_date + ' - Started application')
+        log_it.close()
         start_pysender()
     else:
-        logging.critical('CRITICAL - Failed to start application')
+        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        log_it = open(logging_file, 'a+')
+        log_it.write(today_date + ' - CRITICAL - Failed to start application')
+        log_it.close()
         sys.exit(1)

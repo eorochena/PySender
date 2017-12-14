@@ -30,7 +30,7 @@ def status():
         check_it.shutdown(1)
         check_it.close()
         log_file = open(LogFile, 'a+')
-        log_file.write(hoy + ' GrayLog connection lost \n')
+        log_file.write(hoy + ' Connected to Graylog input on port %s\n' % port)
         log_file.close()
         return True
     except Exception as error:
@@ -38,4 +38,3 @@ def status():
         log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(error) + '\n')
         log_file.close()
         return False
-print(status())

@@ -21,15 +21,12 @@ def graylog_state():
     try:
             response = requests.get('http://%s:%s/system/lbstatus' % (graylog_server, load_balancer_port),
                                 timeout = 18, headers={'Connection':'close'})
-            print(response.text)
             if response.text == 'ALIVE':
                     try:
                             response = requests.get('http://%s:%s/cluster' % (graylog_server, load_balancer_port),
                                                 timeout = 18, headers={'Connection':'close'},
                                                 auth = (admin_user, admin_password))
                             val = json.loads(response.text)
-                            print(response.text)
-                            print(val)
                             for i in val:
                                 servers.append(i)
                             for i in range(len(servers)):
@@ -40,7 +37,7 @@ def graylog_state():
                                         results.append('False')
                                         continue
                             if 'False' in results:
-                                logging.critical('CRITICAL - GrayLog not processing ')
+                                logging.critical('CRITICAL - GrayLog is not processing incoming messages')
                                 return False
                                 sys.exit(1)
                             else:
@@ -50,37 +47,33 @@ def graylog_state():
                                                 % (graylog_server, load_balancer_port, servers[i]), timeout = 18,
                                                 headers = {'Connection':'close'}, auth = (admin_user, admin_password))
                                         journal_status = json.loads(response.text)
-                                        if (float(journal_status['journal_size'])/
-                                                float(journal_status['journal_size_limit']))*100 >= 75:
-                                            journal_capacity.append("BAD")
-                                        elif (float(journal_status['journal_size'])/
-                                                  float(journal_status['journal_size_limit']))\
-                                                *100 <= 74:
-                                            journal_capacity.append("GOOD")
+                                        journal_usage = (float(journal_status['journal_size'])/
+                                                         float(journal_status['journal_size_limit']))*100
+                                        if journal_usage >= 75:
+                                            journal_capacity.append(journal_usage)
+                                        elif journal_usage <= 74:
+                                            continue
                                     except Exception as error:
-                                        logging.critical('4CRITICAL - unable to get journal status - %s' % error)
+                                        logging.critical('CRITICAL - unable to get journal status - %s' % error)
                                         return False
                                         sys.exit(1)
-                                if 'BAD' in journal_capacity:
-                                        logging.critical('CRITICAL - journal capacity = ' + \
-                                            str((float(journal_status['journal_size'])
-                                             /float(journal_status['journal_size_limit']))*100))
+                                if journal_capacity:
+                                        logging.critical('CRITICAL - journal capacity = ' + str(journal_capacity))
                                         return False
                                         sys.exit(1)
                                 else:
                                         return True
                                         sys.exit(0)
                     except Exception as error:
-                        logging.critical('3CRITICAL - unable to get response from GrayLog - %s' % error)
+                        logging.critical('CRITICAL - unable to get status response from GrayLog - %s' % error)
                         return False
                         sys.exit(1)
             else:
-                logging.critical('2CRITICAL - Bad response from GrayLog - ', response.content, ' ', response.status_code)
+                logging.critical('CRITICAL - Bad response from GrayLog - ', response.content, ' ', response.status_code)
                 return False
                 sys.exit(1)
     except Exception as error:
-            logging.critical('1CRITICAL - unable to get any response from GrayLog - %s ' % error)
+            logging.critical('CRITICAL - unable to get any response from GrayLog - %s ' % error)
             return False
             sys.exit(1)
 
-print(graylog_state())
