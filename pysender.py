@@ -114,6 +114,7 @@ def pysender(filename, app, firestart_pid):
                 log_it = open(log_file(app), 'a+')
                 log_it.write(today_date + ' - unable to send message to GrayLog - ' + str(error) + '\n')
                 log_it.close()
+                sender.close()
                 continue
         elif tail_alive(filename, app) == False and firestart_status(app, firestart_pid) \
                 and check_connection.status() and graylog_status.graylog_state():
