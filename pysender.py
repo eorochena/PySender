@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import graylog_status
-import logging.handlers
 import os
 import subprocess
 import datetime

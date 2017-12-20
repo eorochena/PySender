@@ -5,6 +5,8 @@ import sys
 import json
 import sender
 import logging
+import subprocess
+import os
 
 graylog_server = sender.graylog_server()
 load_balancer_port = int(sender.load_balancer_port())
@@ -13,6 +15,9 @@ admin_password = sender.graylog_admin_password()
 servers = []
 results = []
 journal_capacity = []
+
+if os.path.isdir('/var/log/pysender') == False:
+    subprocess.call('mkdir /var/log/pysender', shell=True)
 
 logging_file = "/var/log/pysender/graylog_status.log"
 logging.basicConfig(format='%(asctime)s %(message)s', filename=logging_file, level=logging.INFO)

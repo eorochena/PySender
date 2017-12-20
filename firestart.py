@@ -23,9 +23,6 @@ firestart_pid = os.getpid()
 logging_file = "/var/log/pysender/firestart.log"
 logging.basicConfig(format='%(asctime)s %(message)s', filename=logging_file, level=logging.INFO)
 
-if os.path.isdir('/var/log/pysender') == False:
-    subprocess.call('mkdir /var/log/pysender', shell=True)
-
 emptiness = os.devnull
 empty_file = open(emptiness, 'w')
 ip_address = socket.gethostbyname(socket.gethostname())
