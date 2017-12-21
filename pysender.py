@@ -66,7 +66,7 @@ def pysender(filename, app, firestart_pid):
 
     def logmsg(app):
         content = ''
-        while firestart_status(app, firestart_pid):
+        while True:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             msg = tail_it.stdout.readline()
             try:
@@ -98,15 +98,13 @@ def pysender(filename, app, firestart_pid):
 
 
     while True:
-        if tail_alive(filename, app) and firestart_status(app, firestart_pid) \
-                and check_connection.status() and graylog_status.graylog_state():
+        if tail_alive(filename, app) and check_connection.status() and graylog_status.graylog_state():
             sender = socket.socket()
             sender.connect_ex((graylog_server, graylog_port))
             try:
                 for line in logmsg(app):
                     message = app + ' ' + str(json.dumps('%s' % line)) + '\n'
                     sender.sendall((message).encode('utf-8'))
-                    #logger.info(message)
             except Exception as error:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 log_it = open(log_file(app), 'a+')
@@ -114,34 +112,24 @@ def pysender(filename, app, firestart_pid):
                 log_it.close()
                 sender.close()
                 continue
-        elif tail_alive(filename, app) == False and firestart_status(app, firestart_pid) \
-                and check_connection.status() and graylog_status.graylog_state():
+        elif tail_alive(filename, app) == False and check_connection.status() and graylog_status.graylog_state():
             tail_it = subprocess.Popen(['tail', '-F', filename], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - restarting tail_it\n')
             log_it.close()
             continue
-        elif tail_alive(filename, app) and firestart_status(app, firestart_pid) == False \
-                and check_connection.status() and graylog_status.graylog_state():
-            os.kill(tail_it.pid, 9)
-            sys.exit(1)
-        elif tail_alive(filename, app) and firestart_status(app, firestart_pid) \
-            and check_connection.status() == False and graylog_status.graylog_state():
+        elif tail_alive(filename, app) and check_connection.status() == False and graylog_status.graylog_state():
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - Unable to send log messages to Graylog, Graylog Input is not processing '
                                       'incoming messages check /var/log/pysender/check_connection.log, '
                                       'retrying every 10 seconds\n')
             log_it.close()
-            try:
-                sender.close()
-            except:
-                pass
+            sender.close()
             time.sleep(10)
             continue
-        elif tail_alive(filename, app) and firestart_status(app, firestart_pid) and check_connection.status() \
-                and graylog_status.graylog_state() == False:
+        elif tail_alive(filename, app) and check_connection.status() and graylog_status.graylog_state() == False:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             log_it = open(log_file(app), 'a+')
             log_it.write(today_date + ' - Not sending messages to Graylog, incoming messages check '
@@ -149,8 +137,7 @@ def pysender(filename, app, firestart_pid):
             log_it.close()
             time.sleep(10)
             continue
-        elif tail_alive(filename, app) == False and firestart_status(app, firestart_pid) == False \
-                and check_connection.status() == False:
+        elif tail_alive(filename, app) == False and graylog_status() == False and check_connection.status() == False:
             sys.exit(1)
 
 
