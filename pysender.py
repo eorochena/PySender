@@ -137,7 +137,8 @@ def pysender(filename, app, firestart_pid):
             log_it.close()
             time.sleep(10)
             continue
-        elif tail_alive(filename, app) == False and graylog_status() == False and check_connection.status() == False:
+        elif tail_alive(filename, app) == False and graylog_status.graylog_state() == False and \
+                        check_connection.status() == False:
             sys.exit(1)
 
 
