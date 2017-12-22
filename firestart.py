@@ -29,13 +29,6 @@ ip_address = socket.gethostbyname(socket.gethostname())
 hostname = socket.gethostname()
 
 
-def graylog_api_status():
-    if 'Alive' in graylog_status.graylog_state():
-        return True
-    else:
-        logging.critical('CRITICAL - unable to connect to graylog api - %s\n' % graylog_status)
-
-
 def start_pysender():
     def cmd(filename, app, firestart_pid):
         pysender.pysender(filename, app, firestart_pid)
@@ -45,7 +38,7 @@ def start_pysender():
         for log_file in files_to_read:
             app = log_file
             start_it = threading.Thread(name = app, target = cmd, args = (files_to_read[log_file],
-                                                                                 app, firestart_pid),)
+                                                                                 app, hostname),)
             start_it.setDaemon(True)
             processes.append(start_it)
         for i in range(len(files_to_read)):

@@ -15,12 +15,11 @@ graylog_server = sender.graylog_server()
 graylog_monitor_port = int(sender.monitor_port())
 graylog_port = int(sender.graylog_input_port())
 ip_address = socket.gethostbyname(socket.gethostname())
-hostname = socket.gethostname()
 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
 pysender_logdir = '/var/log/pysender'
 
 
-def pysender(filename, app, firestart_pid):
+def pysender(filename, app, hostname):
     tail_it = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
@@ -103,7 +102,7 @@ def pysender(filename, app, firestart_pid):
             sender.connect_ex((graylog_server, graylog_port))
             try:
                 for line in logmsg(app):
-                    message = app + ' ' + str(json.dumps('%s' % line)) + '\n'
+                    message = hostname + ' - ' + app + ': ' + str(json.dumps('%s' % line)) + '\n'
                     sender.sendall((message).encode('utf-8'))
             except Exception as error:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
@@ -143,5 +142,5 @@ def pysender(filename, app, firestart_pid):
 
 
 if __name__ == '__main__':
-    pysender(filename, app, firestart_pid)
+    pysender(filename, app, hostname)
 
