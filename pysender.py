@@ -43,8 +43,8 @@ def pysender(filename, app, hostname):
         except Exception as error:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             with open(log_file(app), 'a+') as log_it:
-                log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' %
-                             (filename, app))
+                log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s - %s\n' %
+                             (filename, app, error))
             return False
 
 
@@ -67,11 +67,8 @@ def pysender(filename, app, hostname):
             msg = tail_it.stdout.readline()
             try:
                 if len(msg) > 0 and len(content) <= 109186:
-                    #if re.search(r'^[0-9]', msg) and re.search(r'(\d+-\d+-\d+)', msg):
                     yield content
                     content = msg
-                    #else:
-                    #   content += msg
                 elif len(content) > 109186:
                     with open(log_file(app), 'a+') as log_it:
                         log_it.write('%s - Too many characters in message string\n' % today_date)
