@@ -36,17 +36,15 @@ def pysender(filename, app, hostname):
                 return True
             else:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-                log_it = open(log_file(app), 'a+')
-                log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' %
+                with open(log_file(app), 'a+') as log_it:
+                    log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' %
                              (filename, app))
-                log_it.close()
                 return False
         except Exception as error:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-            log_it = open(log_file(app), 'a+')
-            log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' %
+            with open(log_file(app), 'a+') as log_it:
+                log_it.write(today_date + ' - tail process appears not to be runnning properly - %s - %s\n' %
                              (filename, app))
-            log_it.close()
             return False
 
 
@@ -55,9 +53,8 @@ def pysender(filename, app, hostname):
             os.kill(firestart_pid, 0)
         except OSError:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-            log_it = open(log_file(app), 'a+')
-            log_it.write(today_date + ' - firestart process is not running \n')
-            log_it.close()
+            with open(log_file(app), 'a+') as log_it:
+                log_it.write(today_date + ' - firestart process is not running \n')
             return False
         else:
             return True
@@ -76,24 +73,21 @@ def pysender(filename, app, hostname):
                     #else:
                     #   content += msg
                 elif len(content) > 109186:
-                    log_it = open(log_file(app), 'a+')
-                    log_it.write('%s - Too many characters in message string\n' % today_date)
-                    log_it.close()
+                    with open(log_file(app), 'a+') as log_it:
+                        log_it.write('%s - Too many characters in message string\n' % today_date)
                     continue
                 else:
                     break
             except Exception as e:
-                log_it = open(log_file(app), 'a+')
-                log_it.write(today_date + ' - failed to process log message - ' + str(e) + '\n')
-                log_it.close()
+                with open(log_file(app), 'a+') as log_it:
+                    log_it.write(today_date + ' - failed to process log message - ' + str(e) + '\n')
                 continue
         if len(content) > 0:
             yield content
 
     today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-    log_it = open(log_file(app), 'a+')
-    log_it.write(today_date + ' - Starting application or at least trying - \n')
-    log_it.close()
+    with open(log_file(app), 'a+') as log_it:
+        log_it.write(today_date + ' - Starting application or at least trying - \n')
 
 
     while True:
@@ -106,34 +100,30 @@ def pysender(filename, app, hostname):
                     sender.sendall((message).encode('utf-8'))
             except Exception as error:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-                log_it = open(log_file(app), 'a+')
-                log_it.write(today_date + ' - unable to send message to GrayLog - ' + str(error) + '\n')
-                log_it.close()
+                with open(log_file(app), 'a+') as log_it:
+                    log_it.write(today_date + ' - unable to send message to GrayLog - ' + str(error) + '\n')
                 sender.close()
                 continue
         elif tail_alive(filename, app) == False and check_connection.status() and graylog_status.graylog_state():
             tail_it = subprocess.Popen(['tail', '-F', filename], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-            log_it = open(log_file(app), 'a+')
-            log_it.write(today_date + ' - restarting tail_it\n')
-            log_it.close()
+            with open(log_file(app), 'a+') as log_it:
+                log_it.write(today_date + ' - restarting tail_it\n')
             continue
         elif tail_alive(filename, app) and check_connection.status() == False and graylog_status.graylog_state():
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-            log_it = open(log_file(app), 'a+')
-            log_it.write(today_date + ' - Unable to send log messages to Graylog, Graylog Input is not processing '
+            with open(log_file(app), 'a+') as log_it:
+                log_it.write(today_date + ' - Unable to send log messages to Graylog, Graylog Input is not processing '
                                       'incoming messages check /var/log/pysender/check_connection.log, '
                                       'retrying every 10 seconds\n')
-            log_it.close()
             sender.close()
             time.sleep(10)
             continue
         elif tail_alive(filename, app) and check_connection.status() and graylog_status.graylog_state() == False:
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-            log_it = open(log_file(app), 'a+')
-            log_it.write(today_date + ' - Not sending messages to Graylog, incoming messages check '
+            with open(log_file(app), 'a+') as log_it:
+                log_it.write(today_date + ' - Not sending messages to Graylog, incoming messages check '
                                       '/var/log/pysender/graylog_status.log, retrying every 10 seconds\n')
-            log_it.close()
             time.sleep(10)
             continue
         elif tail_alive(filename, app) == False and graylog_status.graylog_state() == False and \
