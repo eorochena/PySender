@@ -89,6 +89,9 @@ def pysender(filename, app, hostname):
 
     while True:
         if tail_alive(filename, app) and check_connection.status() and graylog_status.graylog_state():
+            today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+            with open(log_file(app), 'a+') as log_it:
+                log_it.write(today_date + ' - Sending messages to Graylog - \n')
             sender = socket.socket()
             sender.connect_ex((graylog_server, graylog_port))
             try:
@@ -98,7 +101,7 @@ def pysender(filename, app, hostname):
             except Exception as error:
                 today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 with open(log_file(app), 'a+') as log_it:
-                    log_it.write(today_date + ' - unable to send message to GrayLog - ' + str(error) + '\n')
+                    log_it.write(today_date + ' - Unable to send message to Graylog - ' + str(error) + '\n')
                 sender.close()
                 continue
         elif tail_alive(filename, app) == False and check_connection.status() and graylog_status.graylog_state():
