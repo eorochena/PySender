@@ -66,10 +66,10 @@ def pysender(filename, app, hostname):
             today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
             msg = tail_it.stdout.readline()
             try:
-                if len(msg) > 0 and len(content) <= 109186:
+                if len(msg) > 0 and len(msg) <= 109186:
                     yield content
                     content = msg
-                elif len(content) > 109186:
+                elif len(msg) > 109186:
                     with open(log_file(app), 'a+') as log_it:
                         log_it.write('%s - Too many characters in message string\n' % today_date)
                     continue
