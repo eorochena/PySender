@@ -9,6 +9,7 @@ import check_connection
 import sys
 import datetime
 import threading
+import time
 
 files_to_read = sender.logs_to_read()
 graylog_input_port = sender.graylog_input_port()
@@ -39,9 +40,9 @@ def start_pysender():
             processes.append(start_it)
         for i in range(len(files_to_read)):
             processes[i].start()
+            time.sleep(1)
         for i in range(len(files_to_read)):
             processes[i].join()
-        return processes
     return run()
 
 
