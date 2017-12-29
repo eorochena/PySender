@@ -72,7 +72,7 @@ def pysender(filename, app, hostname):
                 elif len(msg) > 109186:
                     with open(log_file(app), 'a+') as log_it:
                         log_it.write('%s - Too many characters in message string\n' % today_date)
-                    continue
+                    break
                 else:
                     break
             except Exception as e:
