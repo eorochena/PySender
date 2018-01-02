@@ -78,9 +78,7 @@ def pysender(filename, app, hostname):
             log.warning('%s restarting tail process' % facility)
             continue
         elif tail_alive(filename, app) and check_connection.status() == False and graylog_status.graylog_state():
-            log.warning('%s Unable to send log messages to Graylog, Graylog Input is not processing '
-                                      'incoming messages check /var/log/pysender/check_connection.log, '
-                                      'retrying every 10 seconds' % facility)
+            log.warning('%s Unable to send log messages to Graylog, Graylog Input is not processing ' % facility)
             sender.close()
             time.sleep(10)
             continue
