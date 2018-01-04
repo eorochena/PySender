@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import cloghandler
+import logging
 import graylog_status
 import os
 import pysender
@@ -7,7 +9,6 @@ import socket
 import sender
 import check_connection
 import sys
-import datetime
 import threading
 import time
 
@@ -19,6 +20,9 @@ graylog_server = sender.graylog_server()
 firestart_pid = os.getpid()
 
 logging_file = "/var/log/pysender/firestart.log"
+logging.config.fileConfig('logging.conf')
+log = logging.getLogger()
+
 
 emptiness = os.devnull
 empty_file = open(emptiness, 'w')
@@ -48,15 +52,9 @@ def start_pysender():
 
 while True:
     if check_connection.status() and graylog_status.graylog_state():
-        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        with open(logging_file, 'a+') as log_it:
-            log_it.write(today_date + ' - Started application\n')
+        log.info('Started application')
         start_pysender()
     else:
-        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        with open(logging_file, 'a+') as log_it:
-            log_it.write(today_date + ' - CRITICAL - Failed to start application because either the Graylog input is not '
-                                  ' active or rejecting trafic check /var/log/pysender/check_connection.log'
-                                  ' or the Graylog api is not returning the expected results check '
-                                  '/var/log/graylog_status.log\n')
-        sys.exit(1)
+        log.critical('Failed to start application because either the Graylog input is not active or rejecting '
+                     'traffic or the Graylog api is not returning the expected results')
+        sys.exit(2)

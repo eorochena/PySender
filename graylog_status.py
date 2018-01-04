@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import cloghandler
-import datetime
 import requests
-import sys
 import json
 import sender
 import logging.config
