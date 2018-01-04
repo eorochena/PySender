@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-import cloghandler
 import logging
-import graylog_status
 import os
-import pysender
 import socket
-import sender
-import check_connection
 import sys
 import threading
 import time
+
+import pysender
+import pysender.graylog_status
+import pysender.sender
+from pysender import check_connection, graylog_status, sender
 
 files_to_read = sender.logs_to_read()
 graylog_input_port = sender.graylog_input_port()
@@ -20,7 +20,7 @@ graylog_server = sender.graylog_server()
 firestart_pid = os.getpid()
 
 logging_file = "/var/log/pysender/firestart.log"
-logging.config.fileConfig('logging.conf')
+logging.config.fileConfig('../conf/logging.conf')
 log = logging.getLogger()
 
 

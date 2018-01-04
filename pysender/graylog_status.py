@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import cloghandler
-import requests
 import json
-import sender
-import logging.config
 import logging
-import subprocess
+import logging.config
 import os
+import subprocess
+
+import requests
+
+from pysender import sender
 
 graylog_server = sender.graylog_server()
 load_balancer_port = int(sender.load_balancer_port())
@@ -21,7 +22,7 @@ facility = 'graylog-api'
 if os.path.isdir('/var/log/pysender') == False:
     subprocess.call('mkdir /var/log/pysender', shell=True)
 
-logging.config.fileConfig('logging.conf')
+logging.config.fileConfig('../conf/logging.conf')
 log = logging.getLogger()
 
 def graylog_state():

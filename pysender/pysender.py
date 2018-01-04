@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 
-import os
-import subprocess
-import datetime
-import socket
 import json
-import sender
+import logging.config
+import socket
+import subprocess
 import sys
 import time
-import check_connection
-import graylog_status
-import logging.config
-import logging
-import cloghandler
+
+from pysender import check_connection, graylog_status, sender
 
 graylog_server = sender.graylog_server()
 graylog_monitor_port = int(sender.monitor_port())
 graylog_port = int(sender.graylog_input_port())
 ip_address = socket.gethostbyname(socket.gethostname())
-logging.config.fileConfig('logging.conf')
+logging.config.fileConfig('../conf/logging.conf')
 log = logging.getLogger()
 
 def pysender(filename, app, hostname):

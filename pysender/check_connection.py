@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 
-import socket
 import datetime
 import os
+import socket
 import subprocess
-import sender
+
+from pysender import sender
 
 graylog_server = sender.graylog_server()
 graylog_monitor_port = int(sender.monitor_port())

@@ -2,7 +2,7 @@
 
 import os
 
-conf_file = open('sender.conf', 'r')
+conf_file = open('../conf/sender.conf', 'r')
 read_it = conf_file.readlines()
 parameters = {}
 
