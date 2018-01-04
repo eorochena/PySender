@@ -78,12 +78,12 @@ def pysender(filename, app, hostname):
             log.warning('%s restarting tail process' % facility)
             continue
         elif tail_alive(filename, app) and check_connection.status() == False and graylog_status.graylog_state():
-            log.warning('%s Unable to send log messages to Graylog, Graylog Input is not processing ' % facility)
+            log.warning('%s Unable to send log messages to Graylog, Graylog Input is not processing, retrying... ' % facility)
             sender.close()
             time.sleep(10)
             continue
         elif tail_alive(filename, app) and check_connection.status() and graylog_status.graylog_state() == False:
-            log.warning('%s Not sending messages to Graylog' % facility)
+            log.warning('%s Not sending messages to Graylog, retrying...' % facility)
             time.sleep(10)
             continue
         elif tail_alive(filename, app) == False and graylog_status.graylog_state() == False and \
