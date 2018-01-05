@@ -18,6 +18,7 @@ graylog_monitor_port = sender.monitor_port()
 graylog_lb_port = int(sender.load_balancer_port())
 graylog_server = sender.graylog_server()
 firestart_pid = os.getpid()
+facility = 'firestart'
 
 logging_file = "/var/log/pysender/firestart.log"
 logging.config.fileConfig('../conf/logging.conf')
@@ -52,9 +53,9 @@ def start_pysender():
 
 while True:
     if check_connection.status() and graylog_status.graylog_state():
-        log.info('Started application')
+        log.info('%s Started application' % facility)
         start_pysender()
     else:
-        log.critical('Failed to start application because either the Graylog input is not active or rejecting '
-                     'traffic or the Graylog api is not returning the expected results')
+        log.critical('%s Failed to start application because either the Graylog input is not active or rejecting '
+                     'traffic or the Graylog api is not returning the expected results' % facility)
         sys.exit(2)
