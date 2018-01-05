@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
 import json
+import cloghandler
 import logging
 import logging.config
 import os
 import subprocess
-
 import requests
-
-from pysender import sender
+import sender
 
 graylog_server = sender.graylog_server()
 load_balancer_port = int(sender.load_balancer_port())

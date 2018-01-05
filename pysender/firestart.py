@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 import logging
+import logging.config
 import os
 import socket
 import sys
 import threading
 import time
-
 import pysender
-import pysender.graylog_status
-import pysender.sender
-from pysender import check_connection, graylog_status, sender
+import check_connection
+import graylog_status
+import sender
 
 files_to_read = sender.logs_to_read()
 graylog_input_port = sender.graylog_input_port()

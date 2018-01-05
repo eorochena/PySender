@@ -6,8 +6,9 @@ import socket
 import subprocess
 import sys
 import time
-
-from pysender import check_connection, graylog_status, sender
+import check_connection
+import graylog_status
+import sender
 
 graylog_server = sender.graylog_server()
 graylog_monitor_port = int(sender.monitor_port())
