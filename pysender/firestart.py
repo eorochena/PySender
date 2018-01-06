@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
-import graylog_status
+import logging
+import logging.config
 import os
-import pysender
 import socket
-import sender
-import check_connection
 import sys
-import datetime
 import threading
 import time
+import pysender
+import check_connection
+import graylog_status
+import sender
 
 files_to_read = sender.logs_to_read()
 graylog_input_port = sender.graylog_input_port()
@@ -17,8 +18,12 @@ graylog_monitor_port = sender.monitor_port()
 graylog_lb_port = int(sender.load_balancer_port())
 graylog_server = sender.graylog_server()
 firestart_pid = os.getpid()
+facility = 'firestart'
 
 logging_file = "/var/log/pysender/firestart.log"
+logging.config.fileConfig('../conf/logging.conf')
+log = logging.getLogger()
+
 
 emptiness = os.devnull
 empty_file = open(emptiness, 'w')
@@ -48,15 +53,9 @@ def start_pysender():
 
 while True:
     if check_connection.status() and graylog_status.graylog_state():
-        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        with open(logging_file, 'a+') as log_it:
-            log_it.write(today_date + ' - Started application\n')
+        log.info('%s Started application' % facility)
         start_pysender()
     else:
-        today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-        with open(logging_file, 'a+') as log_it:
-            log_it.write(today_date + ' - CRITICAL - Failed to start application because either the Graylog input is not '
-                                  ' active or rejecting trafic check /var/log/pysender/check_connection.log'
-                                  ' or the Graylog api is not returning the expected results check '
-                                  '/var/log/graylog_status.log\n')
-        sys.exit(1)
+        log.critical('%s Failed to start application because either the Graylog input is not active or rejecting '
+                     'traffic or the Graylog api is not returning the expected results' % facility)
+        sys.exit(2)

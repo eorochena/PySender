@@ -1,20 +1,24 @@
 #!/usr/bin/python3
 
-import socket
+import cloghandler
+import logging
+import logging.config
 import datetime
 import os
+import socket
 import subprocess
 import sender
 
 graylog_server = sender.graylog_server()
 graylog_monitor_port = int(sender.monitor_port())
 port = int(sender.graylog_input_port())
+facility = 'check_connection'
+log_dir = "/var/log/pysender/"
+logging.config.fileConfig('../conf/logging.conf')
+log = logging.getLogger()
 
-# Application log
-LogDir = "/var/log/pysender/"
-LogFile = "/var/log/pysender/check_connection.log"
-today_date = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-if os.path.isdir(LogDir) == False:
+if os.path.isdir(log_dir) == False:
+    log.info('Creating /var/log/pysender directory')
     subprocess.call('mkdir /var/log/pysender', shell=True)
 
 def status():
@@ -28,10 +32,8 @@ def status():
         check_it.send('connected to GrayLog'.encode('utf-8'))
         check_it.shutdown(1)
         check_it.close()
-        with open(LogFile, 'a+') as log_file:
-            log_file.write(hoy + ' Connected to Graylog input on port %s\n' % port)
+        log.info('%s connected to Graylog input on port %s' % (facility, port))
         return True
     except Exception as error:
-        with open(LogFile, 'a+') as log_file:
-            log_file.write(hoy + ' - socket - Unable to establish connection with GrayLog - ' + str(error) + '\n')
+        log.critical('%s socket - Unable to establish connection with GrayLog - %s' % (facility, str(error)))
         return False
