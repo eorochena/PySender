@@ -20,7 +20,6 @@ graylog_server = sender.graylog_server()
 firestart_pid = os.getpid()
 facility = 'firestart'
 
-logging_file = "/var/log/pysender/firestart.log"
 logging.config.fileConfig('../conf/logging.conf')
 log = logging.getLogger()
 
