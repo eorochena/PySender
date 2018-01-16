@@ -18,9 +18,6 @@ results = []
 journal_capacity = []
 facility = 'graylog-api'
 
-if os.path.isdir('/var/log/pysender') == False:
-    subprocess.call('mkdir /var/log/pysender', shell=True)
-
 logging.config.fileConfig('../conf/logging.conf')
 log = logging.getLogger()
 
