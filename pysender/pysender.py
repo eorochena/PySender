@@ -7,7 +7,6 @@ import subprocess
 import sys
 import time
 import check_connection
-import graylog_status
 import sender
 
 graylog_server = sender.graylog_server()
@@ -57,7 +56,7 @@ def pysender(filename, app, hostname):
 
 
     while True:
-        if tail_alive(filename, app) and check_connection.status() and graylog_status.graylog_state():
+        if tail_alive(filename, app) and check_connection.status():
             log.info('%s Sending messages to Graylog :)' % facility)
             sender = socket.socket()
             sender.connect_ex((graylog_server, graylog_port))
@@ -69,21 +68,17 @@ def pysender(filename, app, hostname):
                 log.warning('%s Unable to send message to Graylog - %s' % (facility, str(error)))
                 sender.close()
                 continue
-        elif tail_alive(filename, app) == False and check_connection.status() and graylog_status.graylog_state():
+        elif tail_alive(filename, app) == False and check_connection.status():
             tail_it = subprocess.Popen(['tail', '-F', filename], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             log.warning('%s restarting tail process' % facility)
             continue
-        elif tail_alive(filename, app) and check_connection.status() == False and graylog_status.graylog_state():
-            log.warning('%s Unable to send log messages to Graylog, Graylog Input is not processing, retrying... ' % facility)
+        elif tail_alive(filename, app) and check_connection.status() == False:
+            log.warning('%s Unable to send log messages to Graylog, Graylog Input is not processing,'
+                        ' retrying... ' % facility)
             sender.close()
             time.sleep(10)
             continue
-        elif tail_alive(filename, app) and check_connection.status() and graylog_status.graylog_state() == False:
-            log.warning('%s Not sending messages to Graylog, retrying...' % facility)
-            time.sleep(10)
-            continue
-        elif tail_alive(filename, app) == False and graylog_status.graylog_state() == False and \
-                        check_connection.status() == False:
+        elif tail_alive(filename, app) == False and check_connection.status() == False:
             sys.exit(1)
 
 
