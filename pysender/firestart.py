@@ -22,10 +22,6 @@ facility = 'firestart'
 
 logging.config.fileConfig('../conf/logging.conf')
 log = logging.getLogger()
-
-
-emptiness = os.devnull
-empty_file = open(emptiness, 'w')
 ip_address = socket.gethostbyname(socket.gethostname())
 hostname = socket.gethostname()
 
