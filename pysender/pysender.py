@@ -52,12 +52,12 @@ def pysender(filename, app, hostname):
         if len(content) > 0:
             yield content
 
-    log.info('%s Starting application or at least trying...' % facility)
+    log.info('%s Starting application...' % facility)
 
 
     while True:
         if tail_alive(filename, app) and check_connection.status():
-            log.info('%s Sending messages to Graylog :)' % facility)
+            log.info('%s Sending messages to Graylog' % facility)
             sender = socket.socket()
             sender.connect_ex((graylog_server, graylog_port))
             try:
